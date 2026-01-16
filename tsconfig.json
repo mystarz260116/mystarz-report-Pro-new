@@ -15,17 +15,12 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "allowImportingTsExtensions": true,
-    "noEmitOnError": false,
     "types": ["node", "react", "react-dom"]
   },
   "include": ["./**/*.ts", "./**/*.tsx"],
   "exclude": [
     "node_modules",
     "dist",
-    "dist/**/*",
-    "build",
-    "out",
     ".vercel"
   ]
 }

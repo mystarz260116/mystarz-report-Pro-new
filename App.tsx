@@ -1,14 +1,13 @@
-
 import React, { useEffect, useState } from 'react';
 import { HashRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import { LayoutDashboard, PenTool, History, Menu, X, Activity, BarChart3, Cloud, AlertTriangle, RefreshCw, DatabaseZap } from 'lucide-react';
-import ReportForm from './components/ReportForm.tsx';
-import Dashboard from './components/Dashboard.tsx';
-import ReportList from './components/ReportList.tsx';
-import Statistics from './components/Statistics.tsx';
-import MigrationAssistant from './components/MigrationAssistant.tsx';
-import { getReports, loadReportsFromGoogleSheets } from './services/reportService.ts';
-import { DailyReport } from './types.ts';
+import ReportForm from './components/ReportForm';
+import Dashboard from './components/Dashboard';
+import ReportList from './components/ReportList';
+import Statistics from './components/Statistics';
+import MigrationAssistant from './components/MigrationAssistant';
+import { getReports, loadReportsFromGoogleSheets } from './services/reportService';
+import { DailyReport } from './types';
 
 // Sidebar Link Component
 const NavLink = ({ to, icon: Icon, label, onClick }: any) => {
@@ -87,7 +86,7 @@ const AppContent = () => {
         <div className="bg-white p-10 rounded-3xl shadow-2xl max-w-md">
           <AlertTriangle className="w-16 h-16 text-rose-500 mx-auto mb-6" />
           <h1 className="text-2xl font-black text-slate-900 mb-4">読み込みエラーが発生しました</h1>
-          <p className="text-slate-500 mb-8 text-sm">古いデータやネットワークエラーが原因でアプリが起動できない可能性があります。</p>
+          <p className="text-slate-500 mb-8 text-sm">データ形式の不整合によりアプリが起動できない可能性があります。</p>
           <button 
             onClick={clearCacheAndReload}
             className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all"
@@ -101,7 +100,6 @@ const AppContent = () => {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex font-sans text-slate-900 antialiased">
-      {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div 
           className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300"
@@ -109,7 +107,6 @@ const AppContent = () => {
         />
       )}
 
-      {/* Sidebar */}
       <aside className={`
         fixed lg:static inset-y-0 left-0 z-50 w-72 bg-slate-900 text-white transform transition-all duration-300 ease-in-out border-r border-white/5 shadow-2xl
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
