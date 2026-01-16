@@ -32,6 +32,17 @@ export const standardizeDate = (d: any): string => {
   return datePart;
 };
 
+export const getReports = (): DailyReport[] => {
+  try {
+    const data = localStorage.getItem(STORAGE_KEY);
+    if (!data) return [];
+    const parsed = JSON.parse(data);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    return [];
+  }
+};
+
 export const saveReport = async (report: DailyReport): Promise<boolean> => {
   try {
     const existing = getReports();
@@ -48,7 +59,6 @@ export const saveReport = async (report: DailyReport): Promise<boolean> => {
 const saveReportToGoogleSheets = async (report: DailyReport): Promise<boolean> => {
   try {
     const timestamp = new Date().toLocaleString('ja-JP');
-    
     const headers = [
         '保存日時', 'ID', '日付', '部署', '担当者', 
         '項目名', '数量(合計)', 
@@ -57,26 +67,17 @@ const saveReportToGoogleSheets = async (report: DailyReport): Promise<boolean> =
         '備考', '問題点'
     ];
 
-    const formatTime = (t?: string) => (t && t.trim() !== '' ? t : "");
-
-    const rows = report.items.length === 0 
-      ? [[
-          timestamp, report.id, report.date, report.department, report.staffName, 
-          "", 0, 0, 0, 0, 0, 0,
-          formatTime(report.workStartTime), formatTime(report.workEndTime), report.totalBreakTimeMinutes || 0,
-          report.remarks || '', report.issues || ''
-        ]]
-      : report.items.map(item => [
-          timestamp, report.id, report.date, report.department, report.staffName, 
-          item.itemName, item.count || 0,
-          item.countInsured || 0,
-          item.countInsuredCompleted || 0,
-          item.countSelf || 0,
-          item.countSelfCompleted || 0,
-          item.timeMinutes || 0,
-          formatTime(report.workStartTime), formatTime(report.workEndTime), report.totalBreakTimeMinutes || 0, 
-          report.remarks || '', report.issues || ''
-        ]);
+    const rows = report.items.map(item => [
+      timestamp, report.id, report.date, report.department, report.staffName, 
+      item.itemName, item.count || 0,
+      item.countInsured || 0,
+      item.countInsuredCompleted || 0,
+      item.countSelf || 0,
+      item.countSelfCompleted || 0,
+      item.timeMinutes || 0,
+      report.workStartTime || '', report.workEndTime || '', report.totalBreakTimeMinutes || 0, 
+      report.remarks || '', report.issues || ''
+    ]);
 
     const response = await fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
@@ -105,21 +106,6 @@ export const deleteReport = async (id: string): Promise<boolean> => {
     return response.ok || response.type === 'opaque';
   } catch (error) {
     return false;
-  }
-};
-
-export const getReports = (): DailyReport[] => {
-  try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    if (!data) return [];
-    if (data.startsWith('[object') || data === 'undefined') {
-        localStorage.removeItem(STORAGE_KEY);
-        return [];
-    }
-    const parsed = JSON.parse(data);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (e) {
-    return [];
   }
 };
 
@@ -155,11 +141,10 @@ export const loadReportsFromGoogleSheets = async (): Promise<void> => {
         }
 
         if (row['項目名']) {
-            const countValue = row['数量(合計)'] !== undefined ? Number(row['数量(合計)']) : (Number(row['数量']) || 0);
             r.items.push({ 
                 itemId: Math.random().toString(), 
                 itemName: String(row['項目名']), 
-                count: isNaN(countValue) ? 0 : countValue,
+                count: Number(row['数量(合計)']) || 0,
                 countInsured: Number(row['保険数']) || 0,
                 countInsuredCompleted: Number(row['保険完成']) || 0,
                 countSelf: Number(row['自費数']) || 0,
@@ -172,59 +157,6 @@ export const loadReportsFromGoogleSheets = async (): Promise<void> => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(sorted));
     }
   } catch (e) { console.error('データ読み込み失敗:', e); }
-};
-
-export const clearAllReports = async (): Promise<boolean> => {
-  if (!window.confirm("全データを削除しますか？")) return false;
-  try {
-    localStorage.removeItem(STORAGE_KEY);
-    const response = await fetch(GOOGLE_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'clear' }),
-      mode: 'cors', redirect: 'follow'
-    });
-    if (response.ok || response.type === 'opaque') {
-      window.location.reload();
-      return true;
-    }
-    return false;
-  } catch (error) {
-    return false;
-  }
-};
-
-export const downloadCSV = () => {
-  const reports = getReports();
-  if (reports.length === 0) return;
-  
-  const now = new Date();
-  const offset = now.getTimezoneOffset() * 60000;
-  const todayLocal = new Date(now.getTime() - offset).toISOString().split('T')[0];
-
-  let csv = "\uFEFF日付,部署,担当者,項目名,数量合計,保険数,保険完成,自費数,自費完成,製作時間,備考,問題点\n";
-  reports.forEach(r => {
-    r.items.forEach(i => {
-      csv += `${r.date},${r.department},${r.staffName},${i.itemName},${i.count},${i.countInsured || 0},${i.countInsuredCompleted || 0},${i.countSelf || 0},${i.countSelfCompleted || 0},${i.timeMinutes || 0},"${r.remarks}","${r.issues}"\n`;
-    });
-  });
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `daily_reports_${todayLocal}.csv`;
-  link.click();
-};
-
-export const exportDataJSON = () => {
-  const data = localStorage.getItem(STORAGE_KEY);
-  if (!data) return;
-  const blob = new Blob([data], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `lab_reports_backup_${new Date().getTime()}.json`;
-  link.click();
 };
 
 export const importDataJSON = async (file: File): Promise<boolean> => {
@@ -244,29 +176,63 @@ export const importDataJSON = async (file: File): Promise<boolean> => {
   });
 };
 
-/**
- * 外部ファイルを現在のデータに統合（マージ）します
- */
-export const mergeDataJSON = async (rawJson: any): Promise<boolean> => {
+export const mergeDataJSON = async (incomingData: any): Promise<boolean> => {
   try {
-    const incomingData = Array.isArray(rawJson) ? rawJson : [rawJson];
     const currentData = getReports();
+    const newData = Array.isArray(incomingData) ? incomingData : [incomingData];
     
-    // IDの重複を避けてマージ
-    const currentIds = new Set(currentData.map(r => r.id));
-    const newDataToAppend = incomingData.filter(r => r.id && !currentIds.has(r.id));
+    // IDをキーにしたMapで重複を排除してマージ
+    const allReportsMap = new Map();
     
-    if (newDataToAppend.length === 0 && currentData.length > 0) {
-      if (!window.confirm("重複するデータまたは不明な形式です。強制的に上書き統合しますか？")) {
-        return false;
-      }
-    }
+    // 今あるデータをセット
+    currentData.forEach(r => allReportsMap.set(r.id, r));
+    
+    // 新しいデータをセット（同じIDなら上書きされる）
+    newData.forEach(r => {
+      if (r.id) allReportsMap.set(r.id, r);
+    });
 
-    const merged = [...newDataToAppend, ...currentData].sort((a, b) => b.date.localeCompare(a.date));
+    const merged = Array.from(allReportsMap.values()).sort((a, b) => b.date.localeCompare(a.date));
     localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
     return true;
   } catch (error) {
     console.error("Merge error:", error);
     return false;
+  }
+};
+
+export const downloadCSV = () => {
+  const reports = getReports();
+  if (reports.length === 0) return;
+  let csv = "\uFEFF日付,部署,担当者,項目名,数量合計,保険数,保険完成,自費数,自費完成,製作時間,備考,問題点\n";
+  reports.forEach(r => {
+    r.items.forEach(i => {
+      csv += `${r.date},${r.department},${r.staffName},${i.itemName},${i.count},${i.countInsured || 0},${i.countInsuredCompleted || 0},${i.countSelf || 0},${i.countSelfCompleted || 0},${i.timeMinutes || 0},"${r.remarks}","${r.issues}"\n`;
+    });
+  });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `daily_reports_${new Date().toISOString().split('T')[0]}.csv`;
+  link.click();
+};
+
+export const exportDataJSON = () => {
+  const data = localStorage.getItem(STORAGE_KEY);
+  if (!data) return;
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `lab_reports_backup_${new Date().getTime()}.json`;
+  link.click();
+};
+
+// 全データ削除機能を追加（ReportList.tsxでのインポートエラー修正）
+export const clearAllReports = () => {
+  if (window.confirm('ブラウザに保存されているすべての日報データを削除しますか？')) {
+    localStorage.removeItem(STORAGE_KEY);
+    window.location.reload();
   }
 };
