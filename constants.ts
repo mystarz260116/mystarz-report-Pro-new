@@ -1,7 +1,7 @@
 import { Department, DeptConfig } from './types';
 
-// ⚠️ ここを新しいアカウントで取得した「ウェブアプリのURL」に必ず書き換えてください
-export const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwPKXbvDpWZYZZQoh5xZ01gCzy09Y9owvV3EtAPjcsQXV7tTt7hEYZlplYw4DiPNHt8Pw/exec';
+// ⚠️ 新しいアカウントのGAS WebアプリURLに更新しました
+export const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz0vDSNGeTNWmXcDtBHCfHzY6jiljHmxG_MdIVYaxN4iMjcX5NHaZq_ZVEnV3i7KnARDg/exec';
 
 // 🛠️ 運用開始時にここを true にすると「全削除」ボタンが表示されます
 export const SHOW_DANGER_ZONE = false;

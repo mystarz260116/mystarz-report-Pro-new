@@ -1,10 +1,9 @@
-
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DailyReport } from '../types';
 import { DEPARTMENT_CONFIGS, SHOW_DANGER_ZONE } from '../constants';
-import { Search, Download, Upload, Database, Trash2, Edit2, Loader2 } from 'lucide-react';
-import { downloadCSV, exportDataJSON, importDataJSON, clearAllReports, deleteReport } from '../services/reportService';
+import { Search, Download, Database, Trash2, Edit2, Loader2 } from 'lucide-react';
+import { downloadCSV, exportDataJSON, clearAllReports, deleteReport } from '../services/reportService';
 
 interface ReportListProps {
   reports: DailyReport[];
@@ -13,7 +12,6 @@ interface ReportListProps {
 const ReportList: React.FC<ReportListProps> = ({ reports }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
   const filteredReports = reports.filter(r => 
@@ -21,25 +19,6 @@ const ReportList: React.FC<ReportListProps> = ({ reports }) => {
     r.department.includes(searchTerm) ||
     DEPARTMENT_CONFIGS[r.department].label.includes(searchTerm)
   );
-
-  const handleRestore = async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      
-      if (!window.confirm("選択したファイルの内容で、現在のデータをすべて上書き（入れ替え）します。よろしいですか？")) {
-          if (fileInputRef.current) fileInputRef.current.value = '';
-          return;
-      }
-      
-      const success = await importDataJSON(file);
-      if (success) {
-          alert('別アカウントのデータを復元しました。');
-          window.location.reload();
-      } else {
-          alert('ファイルの読み込みに失敗しました。正しい形式のファイルか確認してください。');
-      }
-      if (fileInputRef.current) fileInputRef.current.value = '';
-  };
 
   const handleSingleDelete = async (id: string) => {
     if (!window.confirm("この日報データを削除しますか？\n（Googleスプレッドシートからも削除されます）")) return;
@@ -97,14 +76,6 @@ const ReportList: React.FC<ReportListProps> = ({ reports }) => {
                 >
                     <Download className="w-4 h-4" /> 保存
                 </button>
-
-                <button 
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center justify-center gap-1 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-bold hover:bg-blue-100 border border-blue-200 transition-colors"
-                    title="バックアップファイルからデータを復元（上書き）"
-                >
-                    <Upload className="w-4 h-4" /> 復元
-                </button>
                 
                 {SHOW_DANGER_ZONE && (
                   <button 
@@ -115,14 +86,6 @@ const ReportList: React.FC<ReportListProps> = ({ reports }) => {
                       <Trash2 className="w-4 h-4" /> 全削除
                   </button>
                 )}
-
-                <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    className="hidden" 
-                    accept=".json" 
-                    onChange={handleRestore}
-                />
             </div>
         </div>
       </div>
