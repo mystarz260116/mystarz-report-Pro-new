@@ -1,11 +1,12 @@
 
 import React, { useEffect, useState } from 'react';
 import { HashRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, PenTool, History, Menu, X, Activity, BarChart3, Cloud, AlertTriangle, RefreshCw } from 'lucide-react';
+import { LayoutDashboard, PenTool, History, Menu, X, Activity, BarChart3, Cloud, AlertTriangle, RefreshCw, DatabaseZap } from 'lucide-react';
 import ReportForm from './components/ReportForm.tsx';
 import Dashboard from './components/Dashboard.tsx';
 import ReportList from './components/ReportList.tsx';
 import Statistics from './components/Statistics.tsx';
+import MigrationAssistant from './components/MigrationAssistant.tsx';
 import { getReports, loadReportsFromGoogleSheets } from './services/reportService.ts';
 import { DailyReport } from './types.ts';
 
@@ -129,7 +130,7 @@ const AppContent = () => {
         </div>
         
         <div className="flex flex-col h-[calc(100vh-100px)] justify-between">
-            <nav className="p-6">
+            <nav className="p-6 overflow-y-auto">
                 <p className="px-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-6">Operations</p>
                 <NavLink to="/" icon={PenTool} label="日報入力" onClick={closeSidebar} />
                 <NavLink to="/dashboard" icon={LayoutDashboard} label="ダッシュボード" onClick={closeSidebar} />
@@ -138,6 +139,11 @@ const AppContent = () => {
                 <div className="mt-10">
                     <p className="px-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-6">Analytics</p>
                     <NavLink to="/statistics" icon={BarChart3} label="月間集計表" onClick={closeSidebar} />
+                </div>
+
+                <div className="mt-10">
+                    <p className="px-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-6">System</p>
+                    <NavLink to="/migration" icon={DatabaseZap} label="他データの移行" onClick={closeSidebar} />
                 </div>
             </nav>
 
@@ -185,6 +191,7 @@ const AppContent = () => {
                 <Route path="/dashboard" element={<Dashboard reports={reports} />} />
                 <Route path="/history" element={<ReportList reports={reports} />} />
                 <Route path="/statistics" element={<Statistics reports={reports} />} />
+                <Route path="/migration" element={<MigrationAssistant />} />
                 <Route path="/entry" element={<Navigate to="/" replace />} />
             </Routes>
           </div>
