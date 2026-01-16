@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Department, DailyReport, DailyReportItem, ModelTimeEntry } from '../types.ts';
-import { DEPARTMENT_CONFIGS, DEPARTMENTS_LIST, STAFF_GROUPS } from '../constants.ts';
-import { Save, Plus, Calendar, User, Timer, Trash2, Info, CheckCircle2, Clock, Loader2 } from 'lucide-react';
-import { saveReport } from '../services/reportService.ts';
+import { Department, DailyReport, DailyReportItem, ModelTimeEntry } from '../types';
+import { DEPARTMENT_CONFIGS, DEPARTMENTS_LIST, STAFF_GROUPS } from '../constants';
+import { Save, Plus, CheckCircle2, Clock, Loader2 } from 'lucide-react';
+import { saveReport } from '../services/reportService';
 
 interface ReportFormProps {
   onSuccess: () => void;
@@ -15,7 +14,6 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
   const navigate = useNavigate();
   const editData = location.state?.editReport as DailyReport | undefined;
 
-  // 日本時間の今日の日付 (YYYY-MM-DD) を取得
   const getTodayLocal = () => {
     const d = new Date();
     const offset = d.getTimezoneOffset() * 60000;
@@ -26,22 +24,14 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [date, setDate] = useState(getTodayLocal());
   const [staffName, setStaffName] = useState('');
-  
   const [workStartTime, setWorkStartTime] = useState('');
   const [workEndTime, setWorkEndTime] = useState('');
-
   const [breakTime, setBreakTime] = useState(60);
   const [remarks, setRemarks] = useState('');
   const [issues, setIssues] = useState('');
-  
-  // 保存中フラグ（連打防止用）
   const [isSaving, setIsSaving] = useState(false);
-
-  // デンチャー以外の標準入力用
   const [itemCounts, setItemCounts] = useState<Record<string, number>>({});
   const [itemTimes, setItemTimes] = useState<Record<string, number>>({});
-  
-  // デンチャー専用の多機能入力用
   const [dentureDetails, setDentureDetails] = useState<Record<string, {
     insured: number, 
     insuredComp: number, 
@@ -49,14 +39,6 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
     selfComp: number, 
     time: number
   }>>({});
-
-  const [itemTimeRanges, setItemTimeRanges] = useState<Record<string, {start: string, end: string}>>({});
-  const [modelTimeEntries, setModelTimeEntries] = useState<ModelTimeEntry[]>([]);
-  const [tempModelEntry, setTempModelEntry] = useState<ModelTimeEntry>({
-    staffName: '',
-    modelEndTime: '',
-    finalEndTime: ''
-  });
 
   useEffect(() => {
     if (editData) {
@@ -72,12 +54,10 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
       const counts: Record<string, number> = {};
       const times: Record<string, number> = {};
       const dDetails: Record<string, any> = {};
-      const ranges: Record<string, {start: string, end: string}> = {};
 
       editData.items.forEach(item => {
         counts[item.itemName] = item.count;
         if (item.timeMinutes) times[item.itemName] = item.timeMinutes;
-        
         if (editData.department === Department.DENTURE) {
             dDetails[item.itemName] = {
                 insured: item.countInsured || 0,
@@ -87,32 +67,20 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
                 time: item.timeMinutes || 0
             };
         }
-
-        if (item.customTimeRange) {
-          const [start, end] = item.customTimeRange.split('~');
-          ranges[item.itemName] = { start, end };
-        }
       });
 
       setItemCounts(counts);
       setItemTimes(times);
       setDentureDetails(dDetails);
-      setItemTimeRanges(ranges);
-      if (editData.modelTimeEntries) setModelTimeEntries(editData.modelTimeEntries);
     }
   }, [editData]);
 
   useEffect(() => {
-    // 部署が切り替わったらタブをリセット
     setActiveSectionIndex(0);
-    
     if (!editData) {
       setItemCounts({});
       setItemTimes({});
       setDentureDetails({});
-      setItemTimeRanges({});
-      setModelTimeEntries([]);
-      setTempModelEntry({ staffName: '', modelEndTime: '', finalEndTime: '' });
     }
   }, [selectedDept, editData]);
 
@@ -130,11 +98,9 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
   const handleCountChange = (itemName: string, val: string) => {
     const num = parseInt(val) || 0;
     const updatedCounts = { ...itemCounts, [itemName]: num };
-
     if (selectedDept === Department.OSAKA_MODEL) {
         const urgentItems = ['ノーマル模型(急ぎ)', '貼り付け模型(急ぎ)', 'インレー・コア模型(急ぎ)'];
         const totalItems = ['ノーマル模型(総製作)', '貼り付け模型(総製作)', 'インレー・コア模型(総製作)'];
-
         if (urgentItems.includes(itemName) || totalItems.includes(itemName)) {
             const urgentSum = urgentItems.reduce((acc, key) => acc + (updatedCounts[key] || 0), 0);
             updatedCounts['総数(急ぎ)'] = urgentSum;
@@ -148,19 +114,13 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSaving) return;
-
-    // 保存前の最終確認
-    if (!window.confirm("日報を保存して報告しますか？")) {
-      return;
-    }
-
+    if (!window.confirm("日報を保存して報告しますか？")) return;
     setIsSaving(true);
 
     try {
       let reportItems: DailyReportItem[] = [];
-
       if (selectedDept === Department.DENTURE) {
-          reportItems = (Object.entries(dentureDetails) as [string, { insured: number; insuredComp: number; self: number; selfComp: number; time: number }][])
+          reportItems = Object.entries(dentureDetails)
               .filter(([_, d]) => d.insured > 0 || d.self > 0 || d.time > 0)
               .map(([name, d], idx) => ({
                   itemId: `${idx}`,
@@ -173,7 +133,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
                   timeMinutes: d.time
               }));
       } else {
-          reportItems = (Object.entries(itemCounts) as [string, number][])
+          reportItems = Object.entries(itemCounts)
               .filter(([_, count]) => count > 0)
               .map(([name, count], idx) => ({
                   itemId: `${idx}`,
@@ -181,13 +141,6 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
                   count: count,
                   timeMinutes: itemTimes[name]
               }));
-      }
-
-      if (reportItems.length === 0 && !remarks && modelTimeEntries.length === 0) {
-          if(!window.confirm("実績入力がありませんが登録しますか？")) {
-            setIsSaving(false);
-            return;
-          }
       }
 
       const newReport: DailyReport = {
@@ -201,7 +154,6 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
         workEndTime,
         totalBreakTimeMinutes: breakTime,
         items: reportItems,
-        modelTimeEntries: selectedDept === Department.OSAKA_MODEL ? modelTimeEntries : undefined,
         remarks,
         issues,
         createdAt: Date.now(),
@@ -212,13 +164,12 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
         alert(editData ? '✅ 日報を更新しました' : '✅ 日報が保存されました');
         if (editData) navigate('/', { state: {} });
         onSuccess();
-        if(!editData) window.location.reload(); // フォームを完全にリセット
+        if(!editData) window.location.reload();
       } else {
         alert('⚠️ 保存に失敗しました');
         setIsSaving(false);
       }
     } catch (err) {
-      console.error(err);
       alert('⚠️ エラーが発生しました');
       setIsSaving(false);
     }
@@ -252,7 +203,6 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
                   style={isSelected ? { backgroundColor: dept.color, borderColor: dept.color } : {}}
                 >
                   <span className="leading-tight">{dept.label}</span>
-                  {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
                 </button>
               );
             })}
@@ -291,7 +241,6 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
                 <h3 className="text-lg font-black text-slate-900">{currentConfig?.label} 実績入力</h3>
             </div>
             
-            {/* カテゴリータブ表示（設定された部署のみ） */}
             {hasTabs && (
                 <div className="flex flex-wrap gap-1 bg-gray-100 p-1 rounded-xl">
                     {currentConfig.sections.map((sec, idx) => (
@@ -309,71 +258,28 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
 
             <div className="space-y-3">
               {currentConfig?.sections.map((section, secIdx) => {
-                // タブがある部署は選択中のセクション以外を隠す
-                const isHidden = hasTabs && activeSectionIndex !== secIdx;
-                if (isHidden) return null;
-
-                const isDentureBasic = selectedDept === Department.DENTURE && section.title === '基本';
-
+                if (hasTabs && activeSectionIndex !== secIdx) return null;
                 return (
-                  <div key={secIdx} className="space-y-3 animate-in fade-in duration-300">
-                    {!hasTabs && <h4 className="font-bold text-gray-700 text-sm bg-gray-50 px-3 py-1 rounded-md">{section.title}</h4>}
-                    
+                  <div key={secIdx} className="space-y-3">
                     <div className="grid grid-cols-1 gap-2">
                         {section.items.map((item) => {
-                            if (selectedDept === Department.DENTURE) {
+                            if (selectedDept === Department.DENTURE && section.title !== '基本') {
                                 const d = dentureDetails[item] || { insured: 0, insuredComp: 0, self: 0, selfComp: 0, time: 0 };
-                                
-                                // デンチャーの「基本」セクションの場合は1項目入力
-                                if (isDentureBasic) {
-                                    return (
-                                        <div key={item} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0 px-2">
-                                            <label className="text-sm font-bold text-gray-700">{item}</label>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                placeholder="0"
-                                                value={d.insured || ''}
-                                                onChange={e => handleDentureDetailChange(item, 'insured', e.target.value)}
-                                                className={`w-24 text-right border rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 ${d.insured > 0 ? 'border-blue-500 bg-blue-50 font-bold' : 'border-gray-300'}`}
-                                            />
-                                        </div>
-                                    );
-                                }
-
-                                // デンチャーのその他のセクションは5連入力
                                 return (
-                                    <div key={item} className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm hover:border-blue-200 transition-colors">
+                                    <div key={item} className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
                                         <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                                             <label className="text-sm font-bold text-gray-700 lg:w-64 shrink-0">{item}</label>
                                             <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 flex-1">
-                                                <div className="space-y-1">
-                                                    <span className="text-[10px] text-blue-600 font-bold block ml-1">保険数</span>
-                                                    <input type="number" placeholder="0" value={d.insured || ''} onChange={e => handleDentureDetailChange(item, 'insured', e.target.value)} className="w-full border-gray-300 rounded-lg p-2 text-center text-sm border focus:ring-2 focus:ring-blue-500 bg-blue-50/30" />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <span className="text-[10px] text-blue-400 font-bold block ml-1 flex items-center gap-0.5"><CheckCircle2 className="w-2.5 h-2.5" />完成</span>
-                                                    <input type="number" placeholder="0" value={d.insuredComp || ''} onChange={e => handleDentureDetailChange(item, 'insuredComp', e.target.value)} className="w-full border-gray-300 rounded-lg p-2 text-center text-sm border focus:ring-2 focus:ring-blue-500" />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <span className="text-[10px] text-purple-600 font-bold block ml-1">自費数</span>
-                                                    <input type="number" placeholder="0" value={d.self || ''} onChange={e => handleDentureDetailChange(item, 'self', e.target.value)} className="w-full border-gray-300 rounded-lg p-2 text-center text-sm border focus:ring-2 focus:ring-purple-500 bg-purple-50/30" />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <span className="text-[10px] text-purple-400 font-bold block ml-1 flex items-center gap-0.5"><CheckCircle2 className="w-2.5 h-2.5" />完成</span>
-                                                    <input type="number" placeholder="0" value={d.selfComp || ''} onChange={e => handleDentureDetailChange(item, 'selfComp', e.target.value)} className="w-full border-gray-300 rounded-lg p-2 text-center text-sm border focus:ring-2 focus:ring-purple-500" />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <span className="text-[10px] text-amber-600 font-bold block ml-1 flex items-center gap-0.5"><Clock className="w-2.5 h-2.5" />時間</span>
-                                                    <input type="number" placeholder="0" value={d.time || ''} onChange={e => handleDentureDetailChange(item, 'time', e.target.value)} className="w-full border-amber-200 bg-amber-50/30 rounded-lg p-2 text-center text-sm border focus:ring-2 focus:ring-amber-500 font-bold" />
-                                                </div>
+                                                <input type="number" placeholder="保険" value={d.insured || ''} onChange={e => handleDentureDetailChange(item, 'insured', e.target.value)} className="border rounded-lg p-2 text-sm" />
+                                                <input type="number" placeholder="完成" value={d.insuredComp || ''} onChange={e => handleDentureDetailChange(item, 'insuredComp', e.target.value)} className="border rounded-lg p-2 text-sm" />
+                                                <input type="number" placeholder="自費" value={d.self || ''} onChange={e => handleDentureDetailChange(item, 'self', e.target.value)} className="border rounded-lg p-2 text-sm" />
+                                                <input type="number" placeholder="完成" value={d.selfComp || ''} onChange={e => handleDentureDetailChange(item, 'selfComp', e.target.value)} className="border rounded-lg p-2 text-sm" />
+                                                <input type="number" placeholder="時間" value={d.time || ''} onChange={e => handleDentureDetailChange(item, 'time', e.target.value)} className="border border-amber-200 bg-amber-50/30 rounded-lg p-2 text-sm" />
                                             </div>
                                         </div>
                                     </div>
                                 );
                             }
-
-                            // その他部署の通常表示（完成A/B/C含む）
                             return (
                                 <div key={item} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0 px-2">
                                     <label className="text-sm text-gray-600">{item}</label>
@@ -395,34 +301,15 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">備考</label>
-                  <textarea rows={2} value={remarks} onChange={(e) => setRemarks(e.target.value)} className="w-full border-gray-300 rounded-lg p-2 text-sm border focus:ring-2 focus:ring-blue-500 outline-none" />
-              </div>
-              <div className="space-y-1">
-                  <label className="text-xs font-bold text-red-500 uppercase tracking-wider">問題点・トラブル</label>
-                  <textarea rows={2} value={issues} onChange={(e) => setIssues(e.target.value)} className="w-full border-red-200 bg-red-50 rounded-lg p-2 text-sm border focus:ring-2 focus:ring-red-500 outline-none" />
-              </div>
-          </div>
-
           <div className="flex justify-center pt-4">
             <button 
               type="submit" 
               disabled={isSaving}
-              className={`flex items-center gap-2 px-12 py-4 rounded-full shadow-xl transition-all font-bold transform hover:scale-105 active:scale-95 ${
-                isSaving ? 'bg-slate-400 cursor-not-allowed' : 'bg-slate-900 text-white hover:bg-slate-800'
+              className={`flex items-center gap-2 px-12 py-4 rounded-full shadow-xl transition-all font-bold ${
+                isSaving ? 'bg-slate-400' : 'bg-slate-900 text-white hover:bg-slate-800'
               }`}
             >
-              {isSaving ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" /> 保存中...
-                </>
-              ) : (
-                <>
-                  <Save className="w-5 h-5" /> 日報を保存して報告
-                </>
-              )}
+              {isSaving ? <Loader2 className="animate-spin" /> : <Save />} 日報を保存して報告
             </button>
           </div>
         </form>

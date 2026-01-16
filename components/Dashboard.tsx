@@ -1,10 +1,9 @@
-
 import React, { useMemo } from 'react';
-import { DailyReport, Department } from '../types.ts';
+import { DailyReport, Department } from '../types';
 import { CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, XAxis, YAxis } from 'recharts';
-import { DEPARTMENT_CONFIGS } from '../constants.ts';
+import { DEPARTMENT_CONFIGS } from '../constants';
 import { TrendingUp, Users, Calendar, Activity } from 'lucide-react';
-import { standardizeDate } from '../services/reportService.ts';
+import { standardizeDate } from '../services/reportService';
 
 interface DashboardProps { label?: string; reports: DailyReport[] }
 
@@ -49,7 +48,6 @@ const Dashboard: React.FC<DashboardProps> = ({ reports }) => {
     // データの集計
     reports.forEach(r => {
       if (!r.date) return;
-      // 共通の標準化関数を使用して安全に日付キーを特定
       const normalizedDate = standardizeDate(r.date);
       if (trend[normalizedDate] !== undefined) {
         trend[normalizedDate] += r.items.reduce((sum, item) => sum + item.count, 0);
@@ -112,9 +110,6 @@ const Dashboard: React.FC<DashboardProps> = ({ reports }) => {
               </AreaChart>
             </ResponsiveContainer>
           </div>
-          <p className="mt-4 text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center">
-            ※過去30日間、全部署の入力項目の単純合算値です。
-          </p>
         </div>
 
         <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-200">
@@ -146,21 +141,6 @@ const Dashboard: React.FC<DashboardProps> = ({ reports }) => {
             )}
           </div>
         </div>
-      </div>
-
-      <div className="bg-slate-900 rounded-3xl p-6 text-white flex flex-col md:flex-row justify-between items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-500 rounded-xl">
-            <Activity className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] leading-none mb-1">Status Report</p>
-            <p className="text-sm font-bold">全ての部署のデータが同期されています</p>
-          </div>
-        </div>
-        <p className="text-[10px] font-medium text-slate-400 text-center md:text-right">
-          詳細な部署別・品目別の数字は「月間集計表」メニューよりご確認ください。
-        </p>
       </div>
     </div>
   );
