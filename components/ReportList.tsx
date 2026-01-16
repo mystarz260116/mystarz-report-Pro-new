@@ -1,3 +1,4 @@
+
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DailyReport } from '../types';
@@ -25,10 +26,17 @@ const ReportList: React.FC<ReportListProps> = ({ reports }) => {
       const file = e.target.files?.[0];
       if (!file) return;
       
+      if (!window.confirm("選択したファイルの内容で、現在のデータをすべて上書き（入れ替え）します。よろしいですか？")) {
+          if (fileInputRef.current) fileInputRef.current.value = '';
+          return;
+      }
+      
       const success = await importDataJSON(file);
       if (success) {
-          alert('データを復元しました。ページを更新します。');
+          alert('別アカウントのデータを復元しました。');
           window.location.reload();
+      } else {
+          alert('ファイルの読み込みに失敗しました。正しい形式のファイルか確認してください。');
       }
       if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -92,8 +100,8 @@ const ReportList: React.FC<ReportListProps> = ({ reports }) => {
 
                 <button 
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center justify-center gap-1 px-3 py-2 bg-gray-50 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 border border-gray-200 transition-colors"
-                    title="バックアップファイルから復元"
+                    className="flex items-center justify-center gap-1 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-bold hover:bg-blue-100 border border-blue-200 transition-colors"
+                    title="バックアップファイルからデータを復元（上書き）"
                 >
                     <Upload className="w-4 h-4" /> 復元
                 </button>

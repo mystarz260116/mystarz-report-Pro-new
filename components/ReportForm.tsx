@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Department, DailyReport, DailyReportItem, ModelTimeEntry } from '../types.ts';
 import { DEPARTMENT_CONFIGS, DEPARTMENTS_LIST, STAFF_GROUPS } from '../constants.ts';
-import { Save, Plus, Calendar, User, Timer, Trash2, Info, CheckCircle2, Clock } from 'lucide-react';
+import { Save, Plus, Calendar, User, Timer, Trash2, Info, CheckCircle2, Clock, Loader2 } from 'lucide-react';
 import { saveReport } from '../services/reportService.ts';
 
 interface ReportFormProps {
@@ -34,6 +34,9 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
   const [remarks, setRemarks] = useState('');
   const [issues, setIssues] = useState('');
   
+  // 保存中フラグ（連打防止用）
+  const [isSaving, setIsSaving] = useState(false);
+
   // デンチャー以外の標準入力用
   const [itemCounts, setItemCounts] = useState<Record<string, number>>({});
   const [itemTimes, setItemTimes] = useState<Record<string, number>>({});
@@ -144,62 +147,80 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSaving) return;
 
-    let reportItems: DailyReportItem[] = [];
-
-    if (selectedDept === Department.DENTURE) {
-        reportItems = (Object.entries(dentureDetails) as [string, { insured: number; insuredComp: number; self: number; selfComp: number; time: number }][])
-            .filter(([_, d]) => d.insured > 0 || d.self > 0 || d.time > 0)
-            .map(([name, d], idx) => ({
-                itemId: `${idx}`,
-                itemName: name,
-                count: d.insured + d.self,
-                countInsured: d.insured,
-                countInsuredCompleted: d.insuredComp,
-                countSelf: d.self,
-                countSelfCompleted: d.selfComp,
-                timeMinutes: d.time
-            }));
-    } else {
-        reportItems = (Object.entries(itemCounts) as [string, number][])
-            .filter(([_, count]) => count > 0)
-            .map(([name, count], idx) => ({
-                itemId: `${idx}`,
-                itemName: name,
-                count: count,
-                timeMinutes: itemTimes[name]
-            }));
+    // 保存前の最終確認
+    if (!window.confirm("日報を保存して報告しますか？")) {
+      return;
     }
 
-    if (reportItems.length === 0 && !remarks && modelTimeEntries.length === 0) {
-        if(!window.confirm("実績入力がありませんが登録しますか？")) return;
-    }
+    setIsSaving(true);
 
-    const newReport: DailyReport = {
-      id: editData ? editData.id : Date.now().toString(),
-      date,
-      department: selectedDept,
-      staffName,
-      startTime: '', 
-      endTime: '',   
-      workStartTime,
-      workEndTime,
-      totalBreakTimeMinutes: breakTime,
-      items: reportItems,
-      modelTimeEntries: selectedDept === Department.OSAKA_MODEL ? modelTimeEntries : undefined,
-      remarks,
-      issues,
-      createdAt: Date.now(),
-    };
+    try {
+      let reportItems: DailyReportItem[] = [];
 
-    const success = await saveReport(newReport);
-    if (success) {
-      alert(editData ? '✅ 日報を更新しました' : '✅ 日報が保存されました');
-      if (editData) navigate('/', { state: {} });
-      onSuccess();
-      if(!editData) window.location.reload(); // フォームを完全にリセット
-    } else {
-      alert('⚠️ 保存に失敗しました');
+      if (selectedDept === Department.DENTURE) {
+          reportItems = (Object.entries(dentureDetails) as [string, { insured: number; insuredComp: number; self: number; selfComp: number; time: number }][])
+              .filter(([_, d]) => d.insured > 0 || d.self > 0 || d.time > 0)
+              .map(([name, d], idx) => ({
+                  itemId: `${idx}`,
+                  itemName: name,
+                  count: d.insured + d.self,
+                  countInsured: d.insured,
+                  countInsuredCompleted: d.insuredComp,
+                  countSelf: d.self,
+                  countSelfCompleted: d.selfComp,
+                  timeMinutes: d.time
+              }));
+      } else {
+          reportItems = (Object.entries(itemCounts) as [string, number][])
+              .filter(([_, count]) => count > 0)
+              .map(([name, count], idx) => ({
+                  itemId: `${idx}`,
+                  itemName: name,
+                  count: count,
+                  timeMinutes: itemTimes[name]
+              }));
+      }
+
+      if (reportItems.length === 0 && !remarks && modelTimeEntries.length === 0) {
+          if(!window.confirm("実績入力がありませんが登録しますか？")) {
+            setIsSaving(false);
+            return;
+          }
+      }
+
+      const newReport: DailyReport = {
+        id: editData ? editData.id : Date.now().toString(),
+        date,
+        department: selectedDept,
+        staffName,
+        startTime: '', 
+        endTime: '',   
+        workStartTime,
+        workEndTime,
+        totalBreakTimeMinutes: breakTime,
+        items: reportItems,
+        modelTimeEntries: selectedDept === Department.OSAKA_MODEL ? modelTimeEntries : undefined,
+        remarks,
+        issues,
+        createdAt: Date.now(),
+      };
+
+      const success = await saveReport(newReport);
+      if (success) {
+        alert(editData ? '✅ 日報を更新しました' : '✅ 日報が保存されました');
+        if (editData) navigate('/', { state: {} });
+        onSuccess();
+        if(!editData) window.location.reload(); // フォームを完全にリセット
+      } else {
+        alert('⚠️ 保存に失敗しました');
+        setIsSaving(false);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('⚠️ エラーが発生しました');
+      setIsSaving(false);
     }
   };
 
@@ -386,8 +407,22 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
           </div>
 
           <div className="flex justify-center pt-4">
-            <button type="submit" className="flex items-center gap-2 bg-slate-900 text-white px-12 py-4 rounded-full hover:bg-slate-800 shadow-xl transition-all font-bold transform hover:scale-105 active:scale-95">
-              <Save className="w-5 h-5" /> 日報を保存して報告
+            <button 
+              type="submit" 
+              disabled={isSaving}
+              className={`flex items-center gap-2 px-12 py-4 rounded-full shadow-xl transition-all font-bold transform hover:scale-105 active:scale-95 ${
+                isSaving ? 'bg-slate-400 cursor-not-allowed' : 'bg-slate-900 text-white hover:bg-slate-800'
+              }`}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" /> 保存中...
+                </>
+              ) : (
+                <>
+                  <Save className="w-5 h-5" /> 日報を保存して報告
+                </>
+              )}
             </button>
           </div>
         </form>
