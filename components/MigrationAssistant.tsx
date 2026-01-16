@@ -39,10 +39,15 @@ const MigrationAssistant: React.FC = () => {
     if (!importedRaw) return;
     if (!window.confirm("今のデータ（もしあれば）をすべて消去して、読み込んだ古いデータに丸ごと入れ替えます。よろしいですか？")) return;
     
-    localStorage.setItem('dental_lab_reports', JSON.stringify(importedRaw));
-    alert("【完了】別のアカウントのデータをこのアプリに復元しました！");
-    window.location.hash = "/history";
-    window.location.reload();
+    // 修正: サービス層の関数を使用するように変更
+    const success = importDataJSON(importedRaw);
+    if (success) {
+      alert("【完了】別のアカウントのデータをこのアプリに復元しました！");
+      window.location.hash = "/history";
+      window.location.reload();
+    } else {
+      alert("データの復元に失敗しました。");
+    }
   };
 
   return (

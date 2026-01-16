@@ -1,3 +1,4 @@
+
 import { DailyReport, Department } from '../types';
 import { GOOGLE_SCRIPT_URL } from '../constants';
 
@@ -48,6 +49,8 @@ export const saveReport = async (report: DailyReport): Promise<boolean> => {
     const filtered = existing.filter(r => r.id !== report.id);
     const updated = [report, ...filtered];
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    
+    console.log('Starting Google Sheets sync to:', GOOGLE_SCRIPT_URL);
     return await saveReportToGoogleSheets(report);
   } catch (error) {
     console.error('保存処理エラー:', error);
@@ -84,8 +87,16 @@ const saveReportToGoogleSheets = async (report: DailyReport): Promise<boolean> =
       body: JSON.stringify({ action: 'save', rows, headers }),
       mode: 'cors', redirect: 'follow'
     });
-    return response.ok || response.type === 'opaque';
+
+    if (!response.ok && response.type !== 'opaque') {
+      console.error('Sync failed with status:', response.status);
+      return false;
+    }
+
+    console.log('Sync successfully sent to GAS');
+    return true;
   } catch (error) {
+    console.error('GAS Sync error:', error);
     return false;
   }
 };
@@ -158,43 +169,6 @@ export const loadReportsFromGoogleSheets = async (): Promise<void> => {
   } catch (e) { console.error('データ読み込み失敗:', e); }
 };
 
-export const importDataJSON = async (file: File): Promise<boolean> => {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const json = e.target?.result as string;
-        JSON.parse(json);
-        localStorage.setItem(STORAGE_KEY, json);
-        resolve(true);
-      } catch {
-        resolve(false);
-      }
-    };
-    reader.readAsText(file);
-  });
-};
-
-export const mergeDataJSON = async (incomingData: any): Promise<boolean> => {
-  try {
-    const currentData = getReports();
-    const newData = Array.isArray(incomingData) ? incomingData : [incomingData];
-    
-    const allReportsMap = new Map();
-    currentData.forEach(r => allReportsMap.set(r.id, r));
-    newData.forEach(r => {
-      if (r.id) allReportsMap.set(r.id, r);
-    });
-
-    const merged = Array.from(allReportsMap.values()).sort((a, b) => b.date.localeCompare(a.date));
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-    return true;
-  } catch (error) {
-    console.error("Merge error:", error);
-    return false;
-  }
-};
-
 export const downloadCSV = () => {
   const reports = getReports();
   if (reports.length === 0) return;
@@ -227,5 +201,33 @@ export const clearAllReports = () => {
   if (window.confirm('ブラウザに保存されているすべての日報データを削除しますか？')) {
     localStorage.removeItem(STORAGE_KEY);
     window.location.reload();
+  }
+};
+
+// 外部JSONデータを現在のデータに統合（重複はIDで排除）
+export const mergeDataJSON = (newData: any): boolean => {
+  try {
+    const newItems = Array.isArray(newData) ? newData : [];
+    const existing = getReports();
+    const existingIds = new Set(existing.map(r => r.id));
+    const filteredNew = newItems.filter((r: any) => r.id && !existingIds.has(r.id));
+    const updated = [...filteredNew, ...existing];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    return true;
+  } catch (e) {
+    console.error('Merge error:', e);
+    return false;
+  }
+};
+
+// 外部JSONデータを現在のデータに上書き
+export const importDataJSON = (data: any): boolean => {
+  try {
+    const items = Array.isArray(data) ? data : [];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    return true;
+  } catch (e) {
+    console.error('Import error:', e);
+    return false;
   }
 };
