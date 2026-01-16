@@ -1,10 +1,12 @@
+
 import React, { useEffect, useState } from 'react';
 import { HashRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, PenTool, History, Menu, X, Activity, BarChart3, Cloud, AlertTriangle, RefreshCw } from 'lucide-react';
+import { LayoutDashboard, PenTool, History, Menu, X, Activity, BarChart3, Cloud, AlertTriangle, RefreshCw, DatabaseZap } from 'lucide-react';
 import ReportForm from './components/ReportForm.tsx';
 import Dashboard from './components/Dashboard.tsx';
 import ReportList from './components/ReportList.tsx';
 import Statistics from './components/Statistics.tsx';
+import MigrationAssistant from './components/MigrationAssistant.tsx';
 import { getReports, loadReportsFromGoogleSheets } from './services/reportService.ts';
 import { DailyReport } from './types.ts';
 
@@ -133,6 +135,7 @@ const AppContent = () => {
                 <NavLink to="/" icon={PenTool} label="日報入力" onClick={closeSidebar} />
                 <NavLink to="/dashboard" icon={LayoutDashboard} label="ダッシュボード" onClick={closeSidebar} />
                 <NavLink to="/history" icon={History} label="履歴の一覧" onClick={closeSidebar} />
+                <NavLink to="/import" icon={DatabaseZap} label="他データの移行" onClick={closeSidebar} />
                 
                 <div className="mt-10">
                     <p className="px-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-6">Analytics</p>
@@ -144,7 +147,7 @@ const AppContent = () => {
                 <button
                   onClick={handleSyncWithSheets}
                   disabled={isLoading}
-                  className="w-full mb-4 flex items-center justify-center gap-2 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-700 rounded-xl text-xs font-black text-white transition-all shadow-lg"
+                  className="w-full mb-4 flex items-center justify-center gap-2 py-3 bg-emerald-600 hover:bg-emerald-700 rounded-xl text-xs font-black text-white transition-all shadow-lg"
                 >
                   {isLoading ? (
                     <RefreshCw className="w-4 h-4 animate-spin" />
@@ -184,6 +187,7 @@ const AppContent = () => {
                 <Route path="/dashboard" element={<Dashboard reports={reports} />} />
                 <Route path="/history" element={<ReportList reports={reports} />} />
                 <Route path="/statistics" element={<Statistics reports={reports} />} />
+                <Route path="/import" element={<MigrationAssistant />} />
                 <Route path="/entry" element={<Navigate to="/" replace />} />
             </Routes>
           </div>

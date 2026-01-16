@@ -6,13 +6,11 @@ const STORAGE_KEY = 'dental_lab_reports';
 
 /**
  * 日付文字列を YYYY-MM-DD 形式に標準化します
- * 時差（UTC/JST）による日付のズレを防止します
  */
 export const standardizeDate = (d: any): string => {
   if (!d) return '';
   const str = String(d).trim();
 
-  // もし ISO形式 (2026-01-12T15:00:00.000Z) の場合、ローカル時刻に変換
   if (str.includes('T')) {
     const dateObj = new Date(str);
     if (!isNaN(dateObj.getTime())) {
@@ -23,7 +21,6 @@ export const standardizeDate = (d: any): string => {
     }
   }
 
-  // 通常の文字列形式 (2026/01/13 や 2026-1-13 など) の場合
   const datePart = str.split(/[T ]/)[0].replace(/\//g, '-');
   const parts = datePart.split('-');
   if (parts.length === 3) {
@@ -201,7 +198,6 @@ export const downloadCSV = () => {
   const reports = getReports();
   if (reports.length === 0) return;
   
-  // 日本時間の今日の日付をファイル名に使用
   const now = new Date();
   const offset = now.getTimezoneOffset() * 60000;
   const todayLocal = new Date(now.getTime() - offset).toISOString().split('T')[0];
@@ -246,4 +242,31 @@ export const importDataJSON = async (file: File): Promise<boolean> => {
     };
     reader.readAsText(file);
   });
+};
+
+/**
+ * 外部ファイルを現在のデータに統合（マージ）します
+ */
+export const mergeDataJSON = async (rawJson: any): Promise<boolean> => {
+  try {
+    const incomingData = Array.isArray(rawJson) ? rawJson : [rawJson];
+    const currentData = getReports();
+    
+    // IDの重複を避けてマージ
+    const currentIds = new Set(currentData.map(r => r.id));
+    const newDataToAppend = incomingData.filter(r => r.id && !currentIds.has(r.id));
+    
+    if (newDataToAppend.length === 0 && currentData.length > 0) {
+      if (!window.confirm("重複するデータまたは不明な形式です。強制的に上書き統合しますか？")) {
+        return false;
+      }
+    }
+
+    const merged = [...newDataToAppend, ...currentData].sort((a, b) => b.date.localeCompare(a.date));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+    return true;
+  } catch (error) {
+    console.error("Merge error:", error);
+    return false;
+  }
 };
