@@ -1,0 +1,169 @@
+
+import React, { useMemo } from 'react';
+import { DailyReport, Department } from '../types.ts';
+import { CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, XAxis, YAxis } from 'recharts';
+import { DEPARTMENT_CONFIGS } from '../constants.ts';
+import { TrendingUp, Users, Calendar, Activity } from 'lucide-react';
+import { standardizeDate } from '../services/reportService.ts';
+
+interface DashboardProps { label?: string; reports: DailyReport[] }
+
+const Dashboard: React.FC<DashboardProps> = ({ reports }) => {
+  
+  const deptProductionData = useMemo(() => {
+    const data: Record<string, { name: string, count: number, color: string }> = {};
+    Object.values(Department).forEach(d => {
+      data[d] = { name: DEPARTMENT_CONFIGS[d].label, count: 0, color: DEPARTMENT_CONFIGS[d].color };
+    });
+
+    reports.forEach(r => {
+      r.items.forEach(item => {
+        let targetDept = r.department;
+        if (item.itemName.includes('CAD/CAM')) {
+            targetDept = Department.CAD_CAM;
+        }
+        if (data[targetDept]) {
+            data[targetDept].count += item.count;
+        }
+      });
+    });
+
+    return Object.values(data).filter(d => d.count > 0).sort((a, b) => b.count - a.count);
+  }, [reports]);
+
+  const monthlyTrend = useMemo(() => {
+    const trend: Record<string, number> = {};
+    const now = new Date();
+    
+    // 過去30日分の枠を作成 (日本時間基準)
+    for(let i = 29; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(now.getDate() - i);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const dateKey = `${year}-${month}-${day}`;
+      trend[dateKey] = 0;
+    }
+
+    // データの集計
+    reports.forEach(r => {
+      if (!r.date) return;
+      // 共通の標準化関数を使用して安全に日付キーを特定
+      const normalizedDate = standardizeDate(r.date);
+      if (trend[normalizedDate] !== undefined) {
+        trend[normalizedDate] += r.items.reduce((sum, item) => sum + item.count, 0);
+      }
+    });
+
+    return Object.entries(trend).map(([date, count]) => ({
+      date: date.substring(5), // "MM-DD" 形式
+      count
+    }));
+  }, [reports]);
+
+  return (
+    <div className="space-y-8 animate-in fade-in duration-500">
+      
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">ラボ・アナリティクス</h2>
+          <p className="text-slate-500 text-xs font-medium">各部署の稼働状況と生産推移の確認</p>
+        </div>
+        <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200">
+          <Calendar className="w-4 h-4 text-blue-500" />
+          <span className="text-xs font-bold text-slate-700">
+            {new Date().getFullYear()}年{new Date().getMonth() + 1}月
+          </span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-200 min-h-[400px]">
+          <h3 className="text-lg font-black text-slate-800 mb-8 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-blue-500" /> 30日間の生産推移（全社）
+          </h3>
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={monthlyTrend}>
+                <defs>
+                  <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis 
+                  dataKey="date" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{fill: '#94a3b8', fontSize: 10}} 
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{fill: '#94a3b8', fontSize: 10}} 
+                />
+                <Tooltip 
+                  contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}} 
+                  labelStyle={{ fontWeight: 'bold', marginBottom: '4px' }}
+                />
+                <Area type="monotone" dataKey="count" name="総生産数" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorCount)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+          <p className="mt-4 text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center">
+            ※過去30日間、全部署の入力項目の単純合算値です。
+          </p>
+        </div>
+
+        <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-200">
+          <h3 className="text-lg font-black text-slate-800 mb-8 flex items-center gap-2">
+            <Users className="w-5 h-5 text-purple-500" /> 部署別の実績内訳
+          </h3>
+          <div className="space-y-6">
+            {deptProductionData.length > 0 ? (
+              deptProductionData.map((d, i) => {
+                const maxCount = Math.max(...deptProductionData.map(x => x.count), 1);
+                const percentage = (d.count / maxCount) * 100;
+                return (
+                  <div key={i} className="space-y-2">
+                    <div className="flex justify-between text-xs font-bold">
+                      <span className="text-slate-600">{d.name}</span>
+                      <span className="text-slate-900">{d.count.toLocaleString()} <span className="text-slate-400 font-medium">unit</span></span>
+                    </div>
+                    <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${percentage}%`, backgroundColor: d.color }}></div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="flex flex-col items-center justify-center h-48 text-slate-400">
+                <Activity className="w-8 h-8 mb-2 opacity-20" />
+                <p className="text-xs font-bold uppercase tracking-widest">No Data Available</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-slate-900 rounded-3xl p-6 text-white flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-500 rounded-xl">
+            <Activity className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] leading-none mb-1">Status Report</p>
+            <p className="text-sm font-bold">全ての部署のデータが同期されています</p>
+          </div>
+        </div>
+        <p className="text-[10px] font-medium text-slate-400 text-center md:text-right">
+          詳細な部署別・品目別の数字は「月間集計表」メニューよりご確認ください。
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default Dashboard;

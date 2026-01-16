@@ -1,11 +1,14 @@
-<div align="center">
+# Mystarz 日報管理システム
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+## 概要
+Mystarz 技工所の業務日報をデジタル化し、日々の作業記録と月間統計を自動化するWebアプリケーションです。
+iPadやPCのブラウザで動作し、各部署ごとの特殊な入力項目に対応しています。
 
-  <h1>Built with AI Studio</h2>
+## 特徴
+- **部署別フォーム**: 大阪模型、完成A/B/C、デンチャーなど、部署ごとに最適化された入力画面。
+- **自動集計**: 入力されたデータから、作業時間や製作数の月間統計マトリックス表を自動生成。
+- **Googleスプレッドシート連携**: リアルタイムでクラウドへ保存。
 
-  <p>The fastest path from prompt to production with Gemini.</p>
-
-  <a href="https://aistudio.google.com/apps">Start building</a>
-
-</div>
+## 動作環境
+- モダンブラウザ（Google Chrome, Safari, Microsoft Edgeなど）
+- インターネット接続（Google Sheets連携に必要）
