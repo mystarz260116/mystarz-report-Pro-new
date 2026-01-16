@@ -1,9 +1,9 @@
 
 import React, { useState, useRef } from 'react';
-import { Upload, RefreshCw, CheckCircle2, AlertTriangle, ArrowRight, FileJson, Zap, ClipboardList, ShieldCheck } from 'lucide-react';
+import { Upload, RefreshCw, CheckCircle2, FileJson, Zap, ClipboardList, ShieldCheck, DatabaseZap, ArrowRight, AlertTriangle } from 'lucide-react';
 import { GoogleGenAI, Type } from "@google/genai";
 import { saveReport, mergeDataJSON } from '../services/reportService';
-import { DailyReport, Department } from '../types';
+import { DailyReport } from '../types';
 
 const MigrationAssistant: React.FC = () => {
   const [importedRaw, setImportedRaw] = useState<any>(null);
@@ -24,23 +24,22 @@ const MigrationAssistant: React.FC = () => {
         setError(null);
         setResult(null);
       } catch (err) {
-        setError("有効なJSONファイルではありません。以前のアプリで「保存」したファイルを選択してください。");
+        setError("有効なJSONファイルではありません。");
       }
     };
     reader.readAsText(file);
   };
 
-  // AIを使わずに直接マージする（同じシステムのバックアップ用）
   const handleDirectMerge = async () => {
     if (!importedRaw) return;
     
     const success = await mergeDataJSON(importedRaw);
     if (success) {
-      alert("データの統合が完了しました！「履歴の一覧」から確認してください。");
+      alert("【成功】データを統合しました！履歴一覧を確認してください。");
       window.location.hash = "/history";
       window.location.reload();
     } else {
-      setError("データの形式が合いませんでした。AI移行アシスタントを試してください。");
+      setError("データの統合に失敗しました。ファイル形式を確認してください。");
     }
   };
 
@@ -51,17 +50,7 @@ const MigrationAssistant: React.FC = () => {
 
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const prompt = `
-        あなたはデータ移行のエキスパートです。
-        以下のデータを、現在の「Mystarz 日報システム」のデータ形式に変換してください。
-        
-        【移行元データ】
-        ${JSON.stringify(importedRaw, null, 2)}
-        
-        【ルール】
-        1. 部署名は以下から選択: 大阪模型, パターン, 埋没・カット計量, 完成A, 完成B, 完成C, CAD/CAM, デンチャー
-        2. JSONのみを返してください。
-      `;
+      const prompt = `Convert this data to the new format: ${JSON.stringify(importedRaw)}`;
 
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
@@ -94,139 +83,125 @@ const MigrationAssistant: React.FC = () => {
       const migrated = JSON.parse(response.text);
       setResult(migrated);
     } catch (err: any) {
-      setError("お支払い設定（プロジェクトのリンク）が完了していないため、AI機能が使えません。上の「直接統合」ボタンを試してください。");
+      setError("AI機能の利用に失敗しました。画面上部の『Switch to API Key』ボタンから有効なキーが設定されているか確認してください。");
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const confirmImport = async () => {
-    if (!result) return;
-    const success = await saveReport(result);
-    if (success) {
-      alert("インポートに成功しました！");
-      window.location.hash = "/history";
-      window.location.reload();
-    }
-  };
-
   return (
-    <div className="bg-[#f8fafc] min-h-[600px] flex items-center justify-center p-4">
-      <div className="bg-white rounded-[2.5rem] p-8 md:p-12 border border-slate-200 shadow-2xl max-w-2xl w-full">
-        <div className="flex items-center gap-4 mb-8">
-          <div className="p-4 bg-indigo-600 rounded-3xl text-white shadow-lg shadow-indigo-200">
-            <ClipboardList className="w-8 h-8" />
+    <div className="max-w-3xl mx-auto py-8">
+      <div className="bg-white rounded-[3rem] p-10 md:p-16 border border-slate-200 shadow-2xl relative overflow-hidden">
+        {/* 装飾用アイコン */}
+        <div className="absolute -top-10 -right-10 opacity-5">
+           <DatabaseZap className="w-64 h-64" />
+        </div>
+
+        <div className="flex flex-col items-center text-center mb-12 relative">
+          <div className="p-5 bg-blue-600 rounded-[2rem] text-white shadow-xl mb-6">
+            <ClipboardList className="w-10 h-10" />
           </div>
-          <div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">データの取り込み</h2>
-            <p className="text-slate-500 text-sm font-medium">他アカウントで作ったデータやバックアップを移動します</p>
-          </div>
+          <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2">他データの取り込み</h2>
+          <p className="text-slate-500 font-bold max-w-md">
+            前のアプリから保存（JSON）したデータを、今のアプリに合体・移行します。
+          </p>
         </div>
 
         {!importedRaw ? (
           <div 
             onClick={() => fileInputRef.current?.click()}
-            className="border-4 border-dashed border-slate-100 rounded-[2rem] p-16 flex flex-col items-center justify-center cursor-pointer hover:border-indigo-200 hover:bg-indigo-50/30 transition-all group"
+            className="border-4 border-dashed border-slate-100 rounded-[2.5rem] p-20 flex flex-col items-center justify-center cursor-pointer hover:border-blue-200 hover:bg-blue-50/30 transition-all group bg-slate-50/50"
           >
             <input type="file" ref={fileInputRef} className="hidden" accept=".json" onChange={handleFileChange} />
-            <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform bg-white shadow-sm border border-slate-100">
-              <Upload className="w-10 h-10 text-slate-300 group-hover:text-indigo-500" />
+            <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-sm border border-slate-100">
+              <Upload className="w-10 h-10 text-slate-300 group-hover:text-blue-500" />
             </div>
-            <p className="text-slate-900 font-black text-xl mb-2">JSONファイルをアップロード</p>
-            <p className="text-sm text-slate-400 font-bold">前のアプリで「保存」したファイルを選択してください</p>
+            <p className="text-slate-900 font-black text-xl mb-2">バックアップファイルをアップロード</p>
+            <p className="text-sm text-slate-400 font-bold tracking-tight">「履歴一覧」の「保存」ボタンで出したファイルを選択</p>
           </div>
         ) : (
-          <div className="space-y-6">
-            <div className="bg-slate-900 rounded-3xl p-6 font-mono text-[10px] max-h-40 overflow-auto text-emerald-400 border border-slate-800 shadow-inner relative">
-              <div className="sticky top-0 right-0 flex justify-end">
-                <span className="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded text-[8px] font-black uppercase">Data Ready</span>
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="bg-slate-900 rounded-[2rem] p-6 font-mono text-[10px] max-h-40 overflow-auto text-emerald-400 border border-slate-800 shadow-inner">
+              <div className="flex justify-between items-center mb-2 sticky top-0 bg-slate-900 pb-2">
+                <span className="text-slate-500 font-bold uppercase">Ready to Import</span>
+                <button onClick={() => setImportedRaw(null)} className="text-rose-400 hover:text-rose-300 font-bold">ファイルを変更</button>
               </div>
               <pre>{JSON.stringify(importedRaw, null, 2)}</pre>
             </div>
 
             {error && (
-              <div className="p-5 bg-rose-50 text-rose-800 rounded-2xl flex items-start gap-4 border border-rose-100 shadow-sm animate-in fade-in zoom-in-95">
-                <AlertTriangle className="w-6 h-6 shrink-0 text-rose-500" />
-                <div className="text-xs font-bold leading-relaxed">
-                  {error}
-                </div>
+              <div className="p-6 bg-rose-50 border border-rose-100 rounded-2xl flex items-start gap-4">
+                {/* Fixed missing AlertTriangle import */}
+                <AlertTriangle className="w-6 h-6 text-rose-500 shrink-0" />
+                <p className="text-sm font-bold text-rose-900 leading-relaxed">{error}</p>
               </div>
             )}
 
             {!result ? (
-              <div className="grid grid-cols-1 gap-4">
-                <div className="p-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-[1.5rem] shadow-xl">
+              <div className="flex flex-col gap-4">
+                {/* 直接統合（推奨・設定不要） */}
+                <div className="p-1 bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 rounded-[2.5rem] shadow-xl hover:scale-[1.02] transition-transform">
                   <button
                     onClick={handleDirectMerge}
-                    className="w-full py-6 bg-white rounded-[1.4rem] font-black flex items-center justify-center gap-3 hover:bg-slate-50 transition-all active:scale-[0.98]"
+                    className="w-full py-8 bg-white rounded-[2.3rem] font-black flex items-center justify-center gap-6 hover:bg-slate-50 transition-all active:scale-[0.98]"
                   >
-                    <Zap className="w-6 h-6 text-yellow-500 fill-yellow-500" />
+                    <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center shrink-0">
+                       <Zap className="w-8 h-8 text-yellow-400 fill-yellow-400" />
+                    </div>
                     <div className="text-left">
-                      <p className="text-slate-900 text-lg leading-none mb-1">今すぐデータを統合する</p>
-                      <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">同じアプリ同士ならこれだけでOK（設定不要）</p>
+                      <p className="text-slate-900 text-2xl leading-none mb-2">今すぐデータを直接合体させる</p>
+                      <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">推奨：API設定不要・待ち時間なしで完了します</p>
                     </div>
                   </button>
                 </div>
 
+                <div className="flex items-center py-4">
+                  <div className="flex-grow border-t border-slate-200"></div>
+                  <span className="px-4 text-slate-300 text-[10px] font-black tracking-widest uppercase">Other Method</span>
+                  <div className="flex-grow border-t border-slate-200"></div>
+                </div>
+
+                {/* AI変換 */}
                 <button
                   onClick={startAiMigration}
                   disabled={isProcessing}
-                  className="w-full py-5 bg-slate-100 text-slate-500 rounded-[1.5rem] font-black flex items-center justify-center gap-3 hover:bg-slate-200 transition-all disabled:opacity-50"
+                  className="w-full py-5 bg-slate-100 text-slate-500 rounded-[2rem] font-black flex items-center justify-center gap-3 hover:bg-slate-200 transition-all disabled:opacity-50"
                 >
-                  {isProcessing ? <RefreshCw className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />}
-                  AIに形式を変換させて取り込む
+                  {isProcessing ? <RefreshCw className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5 text-blue-400" />}
+                  AIに形式を自動変換させて取り込む
                 </button>
-                
-                <button onClick={() => setImportedRaw(null)} className="text-slate-400 text-xs font-bold hover:text-slate-600 underline">別のファイルを選ぶ</button>
               </div>
             ) : (
-              <div className="animate-in fade-in slide-in-from-bottom-4">
-                <div className="bg-emerald-50 border border-emerald-100 p-8 rounded-[2rem] mb-6 text-center">
-                  <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
-                  <p className="text-emerald-900 font-black text-xl mb-4">変換が完了しました！</p>
-                  <div className="grid grid-cols-2 gap-4 text-xs">
-                    <div className="bg-white p-4 rounded-2xl shadow-sm">
-                      <span className="text-slate-400 block mb-1 font-bold">日付</span>
-                      <span className="font-black text-slate-800 text-lg">{result.date}</span>
-                    </div>
-                    <div className="bg-white p-4 rounded-2xl shadow-sm">
-                      <span className="text-slate-400 block mb-1 font-bold">部署</span>
-                      <span className="font-black text-slate-800 text-lg">{result.department}</span>
-                    </div>
-                  </div>
+              <div className="space-y-6">
+                <div className="bg-emerald-50 border border-emerald-100 p-10 rounded-[2.5rem] text-center">
+                  <CheckCircle2 className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
+                  <p className="text-emerald-900 font-black text-2xl mb-2">AI変換完了</p>
+                  <p className="text-emerald-700/60 text-sm font-bold">内容を確認して保存を確定してください</p>
                 </div>
                 <button
-                  onClick={confirmImport}
-                  className="w-full py-6 bg-slate-900 text-white rounded-[2rem] font-black text-xl hover:bg-black transition-all shadow-2xl active:scale-[0.98]"
+                  onClick={() => {
+                    saveReport(result);
+                    alert("保存しました！");
+                    window.location.hash = "/history";
+                    window.location.reload();
+                  }}
+                  className="w-full py-6 bg-slate-900 text-white rounded-[2rem] font-black text-xl shadow-2xl hover:bg-black transition-all"
                 >
                   この内容で保存を確定
                 </button>
-                <button onClick={() => setResult(null)} className="w-full py-4 text-slate-400 text-sm font-bold hover:text-slate-600">やり直す</button>
               </div>
             )}
           </div>
         )}
+      </div>
 
-        <div className="mt-12 pt-8 border-t border-slate-100">
-          <p className="text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6">Google Cloudでお困りの方</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <a 
-              href="https://console.cloud.google.com/billing" 
-              target="_blank" 
-              className="p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-white hover:shadow-md transition-all flex items-center justify-between group"
-            >
-              <span className="text-[11px] font-black text-slate-600 group-hover:text-indigo-600">1. お支払い権限の確認</span>
-              <ArrowRight className="w-4 h-4 text-slate-300" />
-            </a>
-            <a 
-              href="https://console.cloud.google.com/billing/projects" 
-              target="_blank" 
-              className="p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-white hover:shadow-md transition-all flex items-center justify-between group"
-            >
-              <span className="text-[11px] font-black text-slate-600 group-hover:text-indigo-600">2. プロジェクトの紐付け</span>
-              <ArrowRight className="w-4 h-4 text-slate-300" />
-            </a>
-          </div>
+      <div className="mt-8 bg-blue-50/50 rounded-3xl p-6 border border-blue-100 flex items-center gap-4">
+        <div className="p-3 bg-white rounded-2xl shadow-sm text-blue-600">
+           <Zap className="w-5 h-5" />
+        </div>
+        <div className="text-xs font-bold text-blue-800 leading-relaxed">
+          <p className="mb-1 uppercase tracking-tighter opacity-50">Tips</p>
+          <p>「Switch to API Key」ボタンでキーを設定済みであれば、AIボタンが使えます。まだ設定していない場合や、すぐに終わらせたい場合は「虹色ボタン」での直接統合が一番簡単です。</p>
         </div>
       </div>
     </div>
