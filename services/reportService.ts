@@ -1,4 +1,3 @@
-
 import { DailyReport, Department } from '../types';
 import { GOOGLE_SCRIPT_URL } from '../constants';
 
@@ -181,13 +180,8 @@ export const mergeDataJSON = async (incomingData: any): Promise<boolean> => {
     const currentData = getReports();
     const newData = Array.isArray(incomingData) ? incomingData : [incomingData];
     
-    // IDをキーにしたMapで重複を排除してマージ
     const allReportsMap = new Map();
-    
-    // 今あるデータをセット
     currentData.forEach(r => allReportsMap.set(r.id, r));
-    
-    // 新しいデータをセット（同じIDなら上書きされる）
     newData.forEach(r => {
       if (r.id) allReportsMap.set(r.id, r);
     });
@@ -229,7 +223,6 @@ export const exportDataJSON = () => {
   link.click();
 };
 
-// 全データ削除機能を追加（ReportList.tsxでのインポートエラー修正）
 export const clearAllReports = () => {
   if (window.confirm('ブラウザに保存されているすべての日報データを削除しますか？')) {
     localStorage.removeItem(STORAGE_KEY);
