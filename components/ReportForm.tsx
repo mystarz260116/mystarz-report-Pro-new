@@ -75,9 +75,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
       const dDetails: Record<string, any> = {};
 
       editData.items.forEach(item => {
-        counts[item.itemName] = item.count;
-        if (item.timeMinutes) times[item.itemName] = item.timeMinutes;
-        if (editData.department === Department.DENTURE) {
+        if (editData.department === Department.DENTURE && item.countInsured !== undefined) {
             dDetails[item.itemName] = {
                 insured: item.countInsured || 0,
                 insuredComp: item.countInsuredCompleted || 0,
@@ -85,6 +83,9 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
                 selfComp: item.countSelfCompleted || 0,
                 time: item.timeMinutes || 0
             };
+        } else {
+            counts[item.itemName] = item.count;
+            if (item.timeMinutes) times[item.itemName] = item.timeMinutes;
         }
       });
 
@@ -138,8 +139,20 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
 
     try {
       let reportItems: DailyReportItem[] = [];
+      
+      // シンプル入力項目の抽出 (全部署共通)
+      const simpleItems: DailyReportItem[] = (Object.entries(itemCounts) as [string, number][])
+          .filter(([_, count]) => count > 0)
+          .map(([name, count], idx) => ({
+              itemId: `s-${idx}-${Date.now()}`,
+              itemName: name,
+              count: count,
+              timeMinutes: itemTimes[name] || 0
+          }));
+
       if (selectedDept === Department.DENTURE) {
-          reportItems = (Object.entries(dentureDetails) as [string, {
+          // デンチャー部署の場合、詳細入力項目も抽出して統合
+          const detailedItems: DailyReportItem[] = (Object.entries(dentureDetails) as [string, {
               insured: number;
               insuredComp: number;
               self: number;
@@ -148,7 +161,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
           }][])
               .filter(([_, d]) => d.insured > 0 || d.self > 0 || d.time > 0)
               .map(([name, d], idx) => ({
-                  itemId: `${idx}`,
+                  itemId: `d-${idx}-${Date.now()}`,
                   itemName: name,
                   count: d.insured + d.self,
                   countInsured: d.insured,
@@ -157,15 +170,10 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
                   countSelfCompleted: d.selfComp,
                   timeMinutes: d.time
               }));
+          
+          reportItems = [...simpleItems, ...detailedItems];
       } else {
-          reportItems = (Object.entries(itemCounts) as [string, number][])
-              .filter(([_, count]) => count > 0)
-              .map(([name, count], idx) => ({
-                  itemId: `${idx}`,
-                  itemName: name,
-                  count: count,
-                  timeMinutes: itemTimes[name]
-              }));
+          reportItems = simpleItems;
       }
 
       const newReport: DailyReport = {
@@ -195,6 +203,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
         setIsSaving(false);
       }
     } catch (err) {
+      console.error(err);
       alert('⚠️ エラーが発生しました');
       setIsSaving(false);
     }
@@ -284,11 +293,18 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
             <div className="space-y-3">
               {currentConfig?.sections.map((section, secIdx) => {
                 if (hasTabs && activeSectionIndex !== secIdx) return null;
+                
+                // デンチャー部署で詳細入力が必要なタブか判定
+                // 「基本」と「3D/CAD」以外は詳細入力
+                const isDentureDetailedSection = selectedDept === Department.DENTURE && 
+                                                 section.title !== '基本' && 
+                                                 section.title !== '3D/CAD';
+
                 return (
                   <div key={secIdx} className="space-y-3">
                     <div className="grid grid-cols-1 gap-2">
                         {section.items.map((item) => {
-                            if (selectedDept === Department.DENTURE && section.title !== '基本') {
+                            if (isDentureDetailedSection) {
                                 const d = dentureDetails[item] || { insured: 0, insuredComp: 0, self: 0, selfComp: 0, time: 0 };
                                 return (
                                     <div key={item} className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
@@ -308,14 +324,26 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
                             return (
                                 <div key={item} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0 px-2">
                                     <label className="text-sm text-gray-600">{item}</label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        placeholder="0"
-                                        value={itemCounts[item] === undefined ? '' : itemCounts[item]}
-                                        onChange={(e) => handleCountChange(item, e.target.value)}
-                                        className={`w-24 text-right border rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 ${itemCounts[item] > 0 ? 'border-blue-500 bg-blue-50 font-bold' : 'border-gray-300'}`}
-                                    />
+                                    <div className="flex items-center gap-2">
+                                        {/* 時間入力の追加（必要に応じて） */}
+                                        {(section.title === '3D/CAD' || selectedDept === Department.CAD_CAM) && (
+                                            <input
+                                                type="number"
+                                                placeholder="分"
+                                                value={itemTimes[item] === undefined ? '' : itemTimes[item]}
+                                                onChange={(e) => setItemTimes(prev => ({...prev, [item]: parseInt(e.target.value) || 0}))}
+                                                className="w-16 text-right border rounded-md p-2 text-sm border-amber-200 bg-amber-50/20"
+                                            />
+                                        )}
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            placeholder="0"
+                                            value={itemCounts[item] === undefined ? '' : itemCounts[item]}
+                                            onChange={(e) => handleCountChange(item, e.target.value)}
+                                            className={`w-24 text-right border rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 ${itemCounts[item] > 0 ? 'border-blue-500 bg-blue-50 font-bold' : 'border-gray-300'}`}
+                                        />
+                                    </div>
                                 </div>
                             );
                         })}
