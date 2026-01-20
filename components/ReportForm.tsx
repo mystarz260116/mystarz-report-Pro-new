@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Department, DailyReport, DailyReportItem, ModelTimeEntry } from '../types';
 import { DEPARTMENT_CONFIGS, DEPARTMENTS_LIST, STAFF_GROUPS } from '../constants';
@@ -40,6 +40,24 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
     selfComp: number, 
     time: number
   }>>({});
+
+  // 部署に合わせて担当者リストを並べ替える
+  const sortedStaffGroups = useMemo(() => {
+    const currentDeptLabel = DEPARTMENT_CONFIGS[selectedDept]?.label || '';
+    
+    return [...STAFF_GROUPS].sort((a, b) => {
+      const getScore = (groupName: string) => {
+        if (currentDeptLabel === groupName) return 100;
+        if (currentDeptLabel.includes(groupName)) return 90;
+        if (groupName.includes(currentDeptLabel)) return 90;
+        // 特殊なマッピング
+        if (currentDeptLabel === '大阪模型' && groupName === '模型') return 95;
+        if (currentDeptLabel === '埋没・カット計量' && groupName === '埋没') return 95;
+        return 0;
+      };
+      return getScore(b.groupName) - getScore(a.groupName);
+    });
+  }, [selectedDept]);
 
   useEffect(() => {
     if (editData) {
@@ -100,7 +118,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
     const num = parseInt(val) || 0;
     const updatedCounts = { ...itemCounts, [itemName]: num };
     if (selectedDept === Department.OSAKA_MODEL) {
-        const urgentItems = ['ノーマル模型(急ぎ)', '貼り付け模型(急ぎ)', 'インレー・コア模型(急ぎ)'];
+        const urgentItems = ['ノーマル模型(急ぎ)', 'ノーマル模型(総製作)', '貼り付け模型(急ぎ)', '貼り付け模型(総製作)', 'インレー・コア模型(急ぎ)', 'インレー・コア模型(総製作)', '総数(急ぎ)', '総数(総製作)'];
         const totalItems = ['ノーマル模型(総製作)', '貼り付け模型(総製作)', 'インレー・コア模型(総製作)'];
         if (urgentItems.includes(itemName) || totalItems.includes(itemName)) {
             const urgentSum = urgentItems.reduce((acc, key) => acc + (updatedCounts[key] || 0), 0);
@@ -121,7 +139,6 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
     try {
       let reportItems: DailyReportItem[] = [];
       if (selectedDept === Department.DENTURE) {
-          // Explicitly type Object.entries result to fix "unknown" property access errors
           reportItems = (Object.entries(dentureDetails) as [string, {
               insured: number;
               insuredComp: number;
@@ -141,7 +158,6 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
                   timeMinutes: d.time
               }));
       } else {
-          // Explicitly type Object.entries result to fix "unknown" property access errors
           reportItems = (Object.entries(itemCounts) as [string, number][])
               .filter(([_, count]) => count > 0)
               .map(([name, count], idx) => ({
@@ -225,10 +241,10 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
               <input type="date" required value={date} onChange={(e) => setDate(e.target.value)} className="w-full border-gray-300 rounded-lg p-2 text-sm border bg-white focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">報告者</label>
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">報告者 <span className="text-[10px] text-blue-500 font-normal ml-1">※自部署が優先表示されています</span></label>
               <select required value={staffName} onChange={(e) => setStaffName(e.target.value)} className="w-full border-gray-300 rounded-lg p-2 text-sm border bg-white focus:ring-2 focus:ring-blue-500 outline-none">
                 <option value="">担当者を選択</option>
-                {STAFF_GROUPS.map((group) => (
+                {sortedStaffGroups.map((group) => (
                   <optgroup key={group.groupName} label={group.groupName}>
                     {group.items.map((name) => (<option key={name} value={name}>{name}</option>))}
                   </optgroup>
