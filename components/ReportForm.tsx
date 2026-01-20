@@ -40,6 +40,9 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
     selfComp: number, 
     time: number
   }>>({});
+  const [otherSubItem, setOtherSubItem] = useState('トリミング');
+
+  const otherCategories = ['トリミング', 'CAD', 'パターン', 'バリオ', 'ケンマ・仕上げ', '修正'];
 
   // 部署に合わせて担当者リストを並べ替える
   const sortedStaffGroups = useMemo(() => {
@@ -75,8 +78,19 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
       const dDetails: Record<string, any> = {};
 
       editData.items.forEach(item => {
+        let itemName = item.itemName;
+        
+        // 「その他 (カテゴリー)」形式の復元
+        if (editData.department === Department.DENTURE && itemName.startsWith('その他 (')) {
+            const match = itemName.match(/その他 \((.+)\)/);
+            if (match) {
+                setOtherSubItem(match[1]);
+                itemName = 'その他';
+            }
+        }
+
         if (editData.department === Department.DENTURE && item.countInsured !== undefined) {
-            dDetails[item.itemName] = {
+            dDetails[itemName] = {
                 insured: item.countInsured || 0,
                 insuredComp: item.countInsuredCompleted || 0,
                 self: item.countSelf || 0,
@@ -84,8 +98,8 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
                 time: item.timeMinutes || 0
             };
         } else {
-            counts[item.itemName] = item.count;
-            if (item.timeMinutes) times[item.itemName] = item.timeMinutes;
+            counts[itemName] = item.count;
+            if (item.timeMinutes) times[itemName] = item.timeMinutes;
         }
       });
 
@@ -101,6 +115,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
       setItemCounts({});
       setItemTimes({});
       setDentureDetails({});
+      setOtherSubItem('トリミング');
     }
   }, [selectedDept, editData]);
 
@@ -160,16 +175,22 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
               time: number;
           }][])
               .filter(([_, d]) => d.insured > 0 || d.self > 0 || d.time > 0)
-              .map(([name, d], idx) => ({
-                  itemId: `d-${idx}-${Date.now()}`,
-                  itemName: name,
-                  count: d.insured + d.self,
-                  countInsured: d.insured,
-                  countInsuredCompleted: d.insuredComp,
-                  countSelf: d.self,
-                  countSelfCompleted: d.selfComp,
-                  timeMinutes: d.time
-              }));
+              .map(([name, d], idx) => {
+                  let finalName = name;
+                  if (name === 'その他') {
+                      finalName = `その他 (${otherSubItem})`;
+                  }
+                  return {
+                      itemId: `d-${idx}-${Date.now()}`,
+                      itemName: finalName,
+                      count: d.insured + d.self,
+                      countInsured: d.insured,
+                      countInsuredCompleted: d.insuredComp,
+                      countSelf: d.self,
+                      countSelfCompleted: d.selfComp,
+                      timeMinutes: d.time
+                  };
+              });
           
           reportItems = [...simpleItems, ...detailedItems];
       } else {
@@ -309,7 +330,19 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
                                 return (
                                     <div key={item} className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
                                         <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-                                            <label className="text-sm font-bold text-gray-700 lg:w-64 shrink-0">{item}</label>
+                                            <div className="lg:w-64 shrink-0 flex items-center gap-2">
+                                                <label className="text-sm font-bold text-gray-700">{item}</label>
+                                                {/* デンチャー「その他」項目専用のプルダウン */}
+                                                {selectedDept === Department.DENTURE && item === 'その他' && (
+                                                    <select 
+                                                        value={otherSubItem} 
+                                                        onChange={(e) => setOtherSubItem(e.target.value)}
+                                                        className="border border-gray-300 rounded px-2 py-1 text-xs bg-white focus:ring-1 focus:ring-blue-500 outline-none font-medium"
+                                                    >
+                                                        {otherCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                                    </select>
+                                                )}
+                                            </div>
                                             <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 flex-1">
                                                 <input type="number" placeholder="保険" value={d.insured || ''} onChange={e => handleDentureDetailChange(item, 'insured', e.target.value)} className="border rounded-lg p-2 text-sm" />
                                                 <input type="number" placeholder="完成" value={d.insuredComp || ''} onChange={e => handleDentureDetailChange(item, 'insuredComp', e.target.value)} className="border rounded-lg p-2 text-sm" />

@@ -82,7 +82,9 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
       if (y === currentDate.getFullYear() && (m - 1) === currentDate.getMonth()) {
         r.items.forEach(item => {
           let targetDept = r.department;
-          if (item.itemName.includes('CAD/CAM')) targetDept = Department.CAD_CAM;
+          // 「CAD」という文字列が含まれていればCAD/CAMセクションに統合する
+          if (item.itemName.includes('CAD')) targetDept = Department.CAD_CAM;
+          
           const info = deptMap.get(targetDept);
           if (!info) return;
 

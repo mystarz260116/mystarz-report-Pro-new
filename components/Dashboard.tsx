@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { DailyReport, Department } from '../types';
 import { CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, XAxis, YAxis } from 'recharts';
@@ -18,7 +19,8 @@ const Dashboard: React.FC<DashboardProps> = ({ reports }) => {
     reports.forEach(r => {
       r.items.forEach(item => {
         let targetDept = r.department;
-        if (item.itemName.includes('CAD/CAM')) {
+        // 「CAD」という文字列が含まれていればCAD/CAMセクションに統合する
+        if (item.itemName.includes('CAD')) {
             targetDept = Department.CAD_CAM;
         }
         if (data[targetDept]) {
