@@ -32,8 +32,8 @@ export const STAFF_GROUPS = [
   { groupName: '完成A', items: ['加藤', '武知', '酒井', '小谷', '髙木', '小畠', '中村', '中西(京)', '白山'] },
   { groupName: '完成B', items: ['玉城', '久原', '森田'] },
   { groupName: '完成C', items: ['島村', '天正'] },
-  { groupName: 'CAD/CAM', items: ['木村', '荒木', '新村', '日根', '吉村', '宮田', '村井', '成田', '徳永', '林原', '黒田', '松田', '松尾', '南出', '森山', '三宅', '松田(尚)'] },
-  { groupName: 'デンチャー', items: ['好村', '西村', '木澤', '長原', '浦本'] },
+  { groupName: 'CAD/CAM', items: ['木村', '荒木', '新村', '日根', '吉村', '宮田', '村井', '成田', '徳永', '林原', '黒田', '森山', '三宅', '松田(尚)'] },
+  { groupName: 'デンチャー', items: [ '松田', '松尾', '南出','好村', '西村', '木澤', '長原', '浦本'] },
 ];
 
 export const DEPARTMENT_CONFIGS: Record<Department, DeptConfig> = {
