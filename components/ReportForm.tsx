@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Department, DailyReport, DailyReportItem, ModelTimeEntry } from '../types';
@@ -120,7 +121,14 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
     try {
       let reportItems: DailyReportItem[] = [];
       if (selectedDept === Department.DENTURE) {
-          reportItems = Object.entries(dentureDetails)
+          // Explicitly type Object.entries result to fix "unknown" property access errors
+          reportItems = (Object.entries(dentureDetails) as [string, {
+              insured: number;
+              insuredComp: number;
+              self: number;
+              selfComp: number;
+              time: number;
+          }][])
               .filter(([_, d]) => d.insured > 0 || d.self > 0 || d.time > 0)
               .map(([name, d], idx) => ({
                   itemId: `${idx}`,
@@ -133,7 +141,8 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
                   timeMinutes: d.time
               }));
       } else {
-          reportItems = Object.entries(itemCounts)
+          // Explicitly type Object.entries result to fix "unknown" property access errors
+          reportItems = (Object.entries(itemCounts) as [string, number][])
               .filter(([_, count]) => count > 0)
               .map(([name, count], idx) => ({
                   itemId: `${idx}`,
