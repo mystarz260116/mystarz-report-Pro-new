@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { DailyReport, Department } from '../types';
 import { CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, XAxis, YAxis } from 'recharts';
@@ -18,14 +19,20 @@ const Dashboard: React.FC<DashboardProps> = ({ reports }) => {
     reports.forEach(r => {
       r.items.forEach(item => {
         let targetDept = r.department;
+        const itemName = item.itemName;
         
-        // 特定の項目を統合から除外する
-        const isOsakaCadItem = item.itemName === 'ノーマル模型【CAD】(総製作)' || item.itemName === '貼り付け模型【CAD】(総製作)';
-        const isDentureCadItem = r.department === Department.DENTURE;
-        
-        // 「CAD」という文字列が含まれており、かつ除外対象でない場合はCAD/CAMセクションに統合する
-        if (item.itemName.includes('CAD') && !isOsakaCadItem && !isDentureCadItem) {
+        // ルール1: CAD/CAM(設計) と CAD/CAM(完成) は常にCAD/CAM部門に集計
+        if (itemName === 'CAD/CAM(設計)' || itemName === 'CAD/CAM(完成)') {
             targetDept = Department.CAD_CAM;
+        } else {
+            // ルール2: 特定の項目を統合から除外する
+            const isOsakaCadItem = itemName === 'ノーマル模型【CAD】(総製作)' || itemName === '貼り付け模型【CAD】(総製作)';
+            const isDentureCadItem = r.department === Department.DENTURE;
+            
+            // 「CAD」という文字列が含まれており、かつ除外対象でない場合はCAD/CAMセクションに統合する
+            if (itemName.includes('CAD') && !isOsakaCadItem && !isDentureCadItem) {
+                targetDept = Department.CAD_CAM;
+            }
         }
         
         if (data[targetDept]) {

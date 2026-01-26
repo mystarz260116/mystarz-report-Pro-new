@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { DailyReport, Department } from '../types';
 import { DEPARTMENTS_LIST, isHoliday } from '../constants';
@@ -81,15 +82,21 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
       if (y === currentDate.getFullYear() && (m - 1) === currentDate.getMonth()) {
         r.items.forEach(item => {
           let targetDept = r.department;
+          const itemName = item.itemName;
           
-          // 特定の項目をCAD/CAMセクションへの統合から除外する
-          const isOsakaCadItem = item.itemName === 'ノーマル模型【CAD】(総製作)' || item.itemName === '貼り付け模型【CAD】(総製作)';
-          // デンチャー部門のCAD関連（「その他 (CAD)」や3Dデンチャーなど）も統合せず、デンチャーのままにする
-          const isDentureCadItem = r.department === Department.DENTURE;
-          
-          // 「CAD」という文字列が含まれており、かつ除外対象でない場合はCAD/CAMセクションに統合する
-          if (item.itemName.includes('CAD') && !isOsakaCadItem && !isDentureCadItem) {
+          // ルール1: CAD/CAM(設計) と CAD/CAM(完成) は常にCAD/CAM部門に集計
+          if (itemName === 'CAD/CAM(設計)' || itemName === 'CAD/CAM(完成)') {
               targetDept = Department.CAD_CAM;
+          } else {
+              // ルール2: 大阪模型の特定項目は除外（大阪模型のまま）
+              const isOsakaCadItem = itemName === 'ノーマル模型【CAD】(総製作)' || itemName === '貼り付け模型【CAD】(総製作)';
+              // ルール3: デンチャー部門のCAD関連も除外（デンチャーのまま）
+              const isDentureCadItem = r.department === Department.DENTURE;
+              
+              // 上記以外で「CAD」という文字列が含まれている場合はCAD/CAMセクションに統合する
+              if (itemName.includes('CAD') && !isOsakaCadItem && !isDentureCadItem) {
+                  targetDept = Department.CAD_CAM;
+              }
           }
           
           const info = deptMap.get(targetDept);
