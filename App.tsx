@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { HashRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import { LayoutDashboard, PenTool, History, Menu, X, Activity, BarChart3, Cloud, AlertTriangle, RefreshCw, DatabaseZap } from 'lucide-react';
@@ -133,11 +134,6 @@ const AppContent = () => {
                 <NavLink to="/dashboard" icon={LayoutDashboard} label="ダッシュボード" onClick={closeSidebar} />
                 <NavLink to="/history" icon={History} label="履歴の一覧" onClick={closeSidebar} />
                 
-                <div className="mt-6">
-                    <p className="px-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-6">Settings & Sync</p>
-                    <NavLink to="/migration" icon={DatabaseZap} label="他データの移行" onClick={closeSidebar} />
-                </div>
-
                 <div className="mt-6">
                     <p className="px-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-6">Analytics</p>
                     <NavLink to="/statistics" icon={BarChart3} label="月間集計表" onClick={closeSidebar} />
