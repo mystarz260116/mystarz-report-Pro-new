@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { DailyReport, Department } from '../types';
 import { CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, XAxis, YAxis } from 'recharts';
@@ -20,11 +19,12 @@ const Dashboard: React.FC<DashboardProps> = ({ reports }) => {
       r.items.forEach(item => {
         let targetDept = r.department;
         
-        // 大阪模型のCAD項目は統合から除外する
+        // 特定の項目を統合から除外する
         const isOsakaCadItem = item.itemName === 'ノーマル模型【CAD】(総製作)' || item.itemName === '貼り付け模型【CAD】(総製作)';
+        const isDentureCadItem = r.department === Department.DENTURE;
         
         // 「CAD」という文字列が含まれており、かつ除外対象でない場合はCAD/CAMセクションに統合する
-        if (item.itemName.includes('CAD') && !isOsakaCadItem) {
+        if (item.itemName.includes('CAD') && !isOsakaCadItem && !isDentureCadItem) {
             targetDept = Department.CAD_CAM;
         }
         
