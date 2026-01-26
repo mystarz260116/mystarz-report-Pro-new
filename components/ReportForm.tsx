@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Department, DailyReport, DailyReportItem, ModelTimeEntry } from '../types';
@@ -353,11 +354,41 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
                                                 )}
                                             </div>
                                             <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 flex-1">
-                                                <input type="number" placeholder="保険" value={d.insured || ''} onChange={e => handleDentureDetailChange(item, 'insured', e.target.value)} className="border rounded-lg p-2 text-sm" />
-                                                <input type="number" placeholder="完成" value={d.insuredComp || ''} onChange={e => handleDentureDetailChange(item, 'insuredComp', e.target.value)} className="border rounded-lg p-2 text-sm" />
-                                                <input type="number" placeholder="自費" value={d.self || ''} onChange={e => handleDentureDetailChange(item, 'self', e.target.value)} className="border rounded-lg p-2 text-sm" />
-                                                <input type="number" placeholder="完成" value={d.selfComp || ''} onChange={e => handleDentureDetailChange(item, 'selfComp', e.target.value)} className="border rounded-lg p-2 text-sm" />
-                                                <input type="number" placeholder="時間" value={d.time || ''} onChange={e => handleDentureDetailChange(item, 'time', e.target.value)} className="border border-amber-200 bg-amber-50/30 rounded-lg p-2 text-sm" />
+                                                <input 
+                                                  type="number" 
+                                                  placeholder="保険" 
+                                                  value={d.insured || ''} 
+                                                  onChange={e => handleDentureDetailChange(item, 'insured', e.target.value)} 
+                                                  className="border border-blue-200 bg-blue-50/50 rounded-lg p-2 text-sm text-blue-900 focus:ring-2 focus:ring-blue-400 outline-none" 
+                                                />
+                                                <input 
+                                                  type="number" 
+                                                  placeholder="完成" 
+                                                  value={d.insuredComp || ''} 
+                                                  onChange={e => handleDentureDetailChange(item, 'insuredComp', e.target.value)} 
+                                                  className="border border-sky-200 bg-sky-50/50 rounded-lg p-2 text-sm text-sky-900 focus:ring-2 focus:ring-sky-400 outline-none" 
+                                                />
+                                                <input 
+                                                  type="number" 
+                                                  placeholder="自費" 
+                                                  value={d.self || ''} 
+                                                  onChange={e => handleDentureDetailChange(item, 'self', e.target.value)} 
+                                                  className="border border-purple-200 bg-purple-50/50 rounded-lg p-2 text-sm text-purple-900 focus:ring-2 focus:ring-purple-400 outline-none" 
+                                                />
+                                                <input 
+                                                  type="number" 
+                                                  placeholder="完成" 
+                                                  value={d.selfComp || ''} 
+                                                  onChange={e => handleDentureDetailChange(item, 'selfComp', e.target.value)} 
+                                                  className="border border-indigo-200 bg-indigo-50/50 rounded-lg p-2 text-sm text-indigo-900 focus:ring-2 focus:ring-indigo-400 outline-none" 
+                                                />
+                                                <input 
+                                                  type="number" 
+                                                  placeholder="時間" 
+                                                  value={d.time || ''} 
+                                                  onChange={e => handleDentureDetailChange(item, 'time', e.target.value)} 
+                                                  className="border border-orange-200 bg-orange-50/50 rounded-lg p-2 text-sm text-orange-900 focus:ring-2 focus:ring-orange-400 outline-none" 
+                                                />
                                             </div>
                                         </div>
                                     </div>
