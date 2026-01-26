@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Department, DailyReport, DailyReportItem, ModelTimeEntry } from '../types';
@@ -133,12 +132,22 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
   const handleCountChange = (itemName: string, val: string) => {
     const num = parseInt(val) || 0;
     const updatedCounts = { ...itemCounts, [itemName]: num };
+    
+    // 大阪模型の合計自動計算
     if (selectedDept === Department.OSAKA_MODEL) {
-        const urgentItems = ['ノーマル模型(急ぎ)', 'ノーマル模型(総製作)', '貼り付け模型(急ぎ)', '貼り付け模型(総製作)', 'インレー・コア模型(急ぎ)', 'インレー・コア模型(総製作)', '総数(急ぎ)', '総数(総製作)'];
-        const totalItems = ['ノーマル模型(総製作)', '貼り付け模型(総製作)', 'インレー・コア模型(総製作)'];
+        const urgentItems = ['ノーマル模型(急ぎ)', '貼り付け模型(急ぎ)', 'インレー・コア模型(急ぎ)'];
+        const totalItems = [
+          'ノーマル模型【メタル】(総製作)', 
+          'ノーマル模型【CAD】(総製作)', 
+          '貼り付け模型【メタル】(総製作)', 
+          '貼り付け模型【CAD】(総製作)', 
+          'インレー・コア模型(総製作)'
+        ];
+        
         if (urgentItems.includes(itemName) || totalItems.includes(itemName)) {
             const urgentSum = urgentItems.reduce((acc, key) => acc + (updatedCounts[key] || 0), 0);
             updatedCounts['総数(急ぎ)'] = urgentSum;
+            
             const totalSum = totalItems.reduce((acc, key) => acc + (updatedCounts[key] || 0), 0);
             updatedCounts['総数(総製作)'] = totalSum;
         }
@@ -372,9 +381,13 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
                                             type="number"
                                             min="0"
                                             placeholder="0"
+                                            readOnly={item.includes('総数')}
                                             value={itemCounts[item] === undefined ? '' : itemCounts[item]}
                                             onChange={(e) => handleCountChange(item, e.target.value)}
-                                            className={`w-24 text-right border rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 ${itemCounts[item] > 0 ? 'border-blue-500 bg-blue-50 font-bold' : 'border-gray-300'}`}
+                                            className={`w-24 text-right border rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 
+                                              ${itemCounts[item] > 0 ? 'border-blue-500 bg-blue-50 font-bold' : 'border-gray-300'}
+                                              ${item.includes('総数') ? 'bg-slate-100 font-black cursor-not-allowed' : ''}
+                                            `}
                                         />
                                     </div>
                                 </div>
