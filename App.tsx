@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { HashRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, PenTool, History, Menu, X, BarChart3, Cloud, AlertTriangle, RefreshCw, DatabaseZap, Settings as SettingsIcon } from 'lucide-react';
+import { LayoutDashboard, PenTool, History, Menu, X, BarChart3, Cloud, AlertTriangle, RefreshCw, DatabaseZap, ShieldCheck } from 'lucide-react';
 import ReportForm from './components/ReportForm';
 import Dashboard from './components/Dashboard';
 import ReportList from './components/ReportList';
@@ -15,13 +15,12 @@ import { DailyReport } from './types';
 const MystarzLogo = ({ className }: { className?: string }) => {
   const [logoSrc, setLogoSrc] = useState<string | null>(localStorage.getItem('app_custom_logo'));
 
-  // 設定でロゴが変わった時に検知するため、定期的にチェック（またはイベント等）
   useEffect(() => {
     const handleStorage = () => {
       setLogoSrc(localStorage.getItem('app_custom_logo'));
     };
     window.addEventListener('storage', handleStorage);
-    const interval = setInterval(handleStorage, 1000); // 簡易的な同期
+    const interval = setInterval(handleStorage, 1000);
     return () => {
       window.removeEventListener('storage', handleStorage);
       clearInterval(interval);
@@ -33,7 +32,6 @@ const MystarzLogo = ({ className }: { className?: string }) => {
       {logoSrc ? (
         <img src={logoSrc} alt="Mystarz Logo" className="w-full h-full object-contain" />
       ) : (
-        /* デフォルトのSVGロゴ（画像が設定されていない場合） */
         <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="logoGrad" x1="0%" y1="100%" x2="100%" y2="0%">
@@ -56,18 +54,18 @@ const NavLink = ({ to, icon: Icon, label, color, onClick, sublabel }: any) => {
     <Link
       to={to}
       onClick={onClick}
-      className={`flex items-center gap-4 px-6 py-4 rounded-[1.2rem] transition-all duration-200 mb-2 group ${
+      className={`flex items-center gap-4 px-6 py-5 rounded-[1.5rem] transition-all duration-200 mb-3 group ${
         isActive 
-          ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' 
-          : 'text-slate-600 hover:bg-white hover:shadow-sm hover:text-blue-600'
+          ? 'bg-blue-600 text-white shadow-xl shadow-blue-100' 
+          : 'text-slate-600 hover:bg-white hover:shadow-md hover:text-blue-600'
       }`}
     >
-      <div className={`p-2 rounded-lg transition-colors ${isActive ? 'bg-white/20' : 'bg-slate-100'}`}>
-        <Icon className={`w-6 h-6 ${isActive ? 'text-white' : color || 'text-slate-500'}`} />
+      <div className={`p-2.5 rounded-xl transition-colors ${isActive ? 'bg-white/20' : 'bg-slate-100'}`}>
+        <Icon className={`w-7 h-7 ${isActive ? 'text-white' : color || 'text-slate-500'}`} />
       </div>
       <div>
-        <span className="font-black text-base tracking-tight block">{label}</span>
-        {sublabel && <span className={`text-[10px] font-bold block ${isActive ? 'text-white/70' : 'text-slate-400'}`}>{sublabel}</span>}
+        <span className="font-black text-lg tracking-tight block leading-tight">{label}</span>
+        {sublabel && <span className={`text-[11px] font-bold block mt-0.5 ${isActive ? 'text-white/70' : 'text-slate-400'}`}>{sublabel}</span>}
       </div>
     </Link>
   );
@@ -143,24 +141,21 @@ const AppContent = () => {
         
         <div className="flex flex-col h-[calc(100vh-112px)] justify-between overflow-y-auto">
             <nav className="p-6">
-                <p className="px-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">メイン業務</p>
+                <p className="px-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">メインメニュー</p>
                 <NavLink to="/" icon={PenTool} label="日報入力" color="text-blue-500" onClick={closeSidebar} />
-                <NavLink to="/dashboard" icon={LayoutDashboard} label="統計グラフ" color="text-indigo-500" onClick={closeSidebar} />
-                <NavLink to="/history" icon={History} label="履歴の確認" color="text-amber-500" onClick={closeSidebar} />
                 <NavLink to="/statistics" icon={BarChart3} label="月間集計表" color="text-emerald-500" onClick={closeSidebar} />
 
-                <div className="mt-8">
-                    <p className="px-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">ツール</p>
-                    <NavLink to="/migration" icon={DatabaseZap} label="データ移行" sublabel="他アカウントからの引継ぎ" color="text-rose-500" onClick={closeSidebar} />
-                    <NavLink to="/settings" icon={SettingsIcon} label="アプリ設定" sublabel="ロゴ・環境設定" color="text-slate-500" onClick={closeSidebar} />
+                <div className="mt-12">
+                    <p className="px-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">管理設定</p>
+                    <NavLink to="/admin" icon={ShieldCheck} label="管理者メニュー" sublabel="グラフ・履歴・移行・設定" color="text-slate-700" onClick={closeSidebar} />
                 </div>
             </nav>
 
             <div className="p-6 space-y-4">
-                <button onClick={handleSyncWithSheets} disabled={isLoading} className="w-full flex items-center justify-center gap-3 py-4 bg-white border-2 border-emerald-500 text-emerald-600 hover:bg-emerald-50 rounded-[1.2rem] text-base font-black transition-all shadow-sm active:scale-95">
-                  {isLoading ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Cloud className="w-5 h-5" />} 最新データを取得
+                <button onClick={handleSyncWithSheets} disabled={isLoading} className="w-full flex items-center justify-center gap-3 py-5 bg-white border-2 border-emerald-500 text-emerald-600 hover:bg-emerald-50 rounded-[1.5rem] text-lg font-black transition-all shadow-sm active:scale-95">
+                  {isLoading ? <RefreshCw className="w-6 h-6 animate-spin" /> : <Cloud className="w-6 h-6" />} 最新同期
                 </button>
-                <div className="bg-slate-200/50 rounded-xl p-3 text-center">
+                <div className="bg-slate-200/50 rounded-2xl p-4 text-center">
                     <p className="text-[10px] text-slate-600 font-black flex items-center justify-center gap-2">
                         <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" /> クラウド同期 稼働中
                     </p>
@@ -183,11 +178,13 @@ const AppContent = () => {
           <div className="max-w-[1600px] mx-auto p-6 lg:p-10 pb-24">
             <Routes>
                 <Route path="/" element={<ReportForm onSuccess={() => setRefreshTrigger(t => t + 1)} />} />
-                <Route path="/dashboard" element={<Dashboard reports={reports} />} />
-                <Route path="/history" element={<ReportList reports={reports} />} />
                 <Route path="/statistics" element={<Statistics reports={reports} />} />
-                <Route path="/migration" element={<MigrationAssistant />} />
-                <Route path="/settings" element={<Settings />} />
+                <Route path="/admin" element={<Settings reports={reports} onSuccess={() => setRefreshTrigger(t => t + 1)} />} />
+                {/* 下記の直接アクセスも管理者メニューにリダイレクトするか、残すか選べますが、今回はパスを維持 */}
+                <Route path="/dashboard" element={<Navigate to="/admin" replace />} />
+                <Route path="/history" element={<Navigate to="/admin" replace />} />
+                <Route path="/migration" element={<Navigate to="/admin" replace />} />
+                <Route path="/settings" element={<Navigate to="/admin" replace />} />
                 <Route path="/entry" element={<Navigate to="/" replace />} />
             </Routes>
           </div>
