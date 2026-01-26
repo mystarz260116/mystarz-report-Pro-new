@@ -1,17 +1,16 @@
 
 import React, { useEffect, useState } from 'react';
 import { HashRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, PenTool, History, Menu, X, BarChart3, Cloud, AlertTriangle, RefreshCw, DatabaseZap, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, PenTool, History, Menu, X, BarChart3, Cloud, AlertTriangle, RefreshCw, ShieldCheck } from 'lucide-react';
 import ReportForm from './components/ReportForm';
 import Dashboard from './components/Dashboard';
 import ReportList from './components/ReportList';
 import Statistics from './components/Statistics';
-import MigrationAssistant from './components/MigrationAssistant';
 import Settings from './components/Settings';
 import { getReports, loadReportsFromGoogleSheets } from './services/reportService';
 import { DailyReport } from './types';
 
-// Mystarz ロゴコンポーネント
+// Mystarz ロゴコンポーネント (localStorageから読み込み、無ければデフォルト表示)
 const MystarzLogo = ({ className }: { className?: string }) => {
   const [logoSrc, setLogoSrc] = useState<string | null>(localStorage.getItem('app_custom_logo'));
 
@@ -20,11 +19,7 @@ const MystarzLogo = ({ className }: { className?: string }) => {
       setLogoSrc(localStorage.getItem('app_custom_logo'));
     };
     window.addEventListener('storage', handleStorage);
-    const interval = setInterval(handleStorage, 1000);
-    return () => {
-      window.removeEventListener('storage', handleStorage);
-      clearInterval(interval);
-    };
+    return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
   return (
@@ -147,7 +142,7 @@ const AppContent = () => {
 
                 <div className="mt-12">
                     <p className="px-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">管理設定</p>
-                    <NavLink to="/admin" icon={ShieldCheck} label="管理者メニュー" sublabel="グラフ・履歴・移行・設定" color="text-slate-700" onClick={closeSidebar} />
+                    <NavLink to="/admin" icon={ShieldCheck} label="管理者メニュー" sublabel="実績グラフ・履歴の確認" color="text-slate-700" onClick={closeSidebar} />
                 </div>
             </nav>
 
@@ -155,11 +150,6 @@ const AppContent = () => {
                 <button onClick={handleSyncWithSheets} disabled={isLoading} className="w-full flex items-center justify-center gap-3 py-5 bg-white border-2 border-emerald-500 text-emerald-600 hover:bg-emerald-50 rounded-[1.5rem] text-lg font-black transition-all shadow-sm active:scale-95">
                   {isLoading ? <RefreshCw className="w-6 h-6 animate-spin" /> : <Cloud className="w-6 h-6" />} 最新同期
                 </button>
-                <div className="bg-slate-200/50 rounded-2xl p-4 text-center">
-                    <p className="text-[10px] text-slate-600 font-black flex items-center justify-center gap-2">
-                        <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" /> クラウド同期 稼働中
-                    </p>
-                </div>
             </div>
         </div>
       </aside>
@@ -180,12 +170,8 @@ const AppContent = () => {
                 <Route path="/" element={<ReportForm onSuccess={() => setRefreshTrigger(t => t + 1)} />} />
                 <Route path="/statistics" element={<Statistics reports={reports} />} />
                 <Route path="/admin" element={<Settings reports={reports} onSuccess={() => setRefreshTrigger(t => t + 1)} />} />
-                {/* 下記の直接アクセスも管理者メニューにリダイレクトするか、残すか選べますが、今回はパスを維持 */}
-                <Route path="/dashboard" element={<Navigate to="/admin" replace />} />
-                <Route path="/history" element={<Navigate to="/admin" replace />} />
-                <Route path="/migration" element={<Navigate to="/admin" replace />} />
-                <Route path="/settings" element={<Navigate to="/admin" replace />} />
                 <Route path="/entry" element={<Navigate to="/" replace />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </div>
         </div>
