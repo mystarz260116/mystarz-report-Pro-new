@@ -82,8 +82,14 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
       if (y === currentDate.getFullYear() && (m - 1) === currentDate.getMonth()) {
         r.items.forEach(item => {
           let targetDept = r.department;
-          // 「CAD」という文字列が含まれていればCAD/CAMセクションに統合する
-          if (item.itemName.includes('CAD')) targetDept = Department.CAD_CAM;
+          
+          // 大阪模型のCAD項目は統合から除外する
+          const isOsakaCadItem = item.itemName === 'ノーマル模型【CAD】(総製作)' || item.itemName === '貼り付け模型【CAD】(総製作)';
+          
+          // 「CAD」という文字列が含まれており、かつ除外対象でない場合はCAD/CAMセクションに統合する
+          if (item.itemName.includes('CAD') && !isOsakaCadItem) {
+              targetDept = Department.CAD_CAM;
+          }
           
           const info = deptMap.get(targetDept);
           if (!info) return;
