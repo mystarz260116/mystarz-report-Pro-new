@@ -10,34 +10,34 @@ import Settings from './components/Settings';
 import { getReports, loadReportsFromGoogleSheets } from './services/reportService';
 import { DailyReport } from './types';
 
-// Mystarz ロゴコンポーネント (localStorageから読み込み、無ければデフォルト表示)
+// Mystarz ロゴコンポーネント (指定された画像URLを使用)
 const MystarzLogo = ({ className }: { className?: string }) => {
   const [logoSrc, setLogoSrc] = useState<string | null>(localStorage.getItem('app_custom_logo'));
+  const DEFAULT_LOGO_URL = 'http://www.mystarz.co.jp/M.png';
 
   useEffect(() => {
     const handleStorage = () => {
       setLogoSrc(localStorage.getItem('app_custom_logo'));
     };
     window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
+    const interval = setInterval(handleStorage, 1000);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      clearInterval(interval);
+    };
   }, []);
 
   return (
     <div className={`${className} overflow-hidden flex items-center justify-center bg-transparent`}>
-      {logoSrc ? (
-        <img src={logoSrc} alt="Mystarz Logo" className="w-full h-full object-contain" />
-      ) : (
-        <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="logoGrad" x1="0%" y1="100%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#7e22ce" />
-              <stop offset="100%" stopColor="#ef4444" />
-            </linearGradient>
-          </defs>
-          <path d="M10,10 H90 V90 H70 L50 70 L30 90 H10 Z" fill="url(#logoGrad)" />
-          <path d="M50 40 L54 52 H66 L56 60 L60 72 L50 64 L40 72 L44 60 L34 52 H46 Z" fill="white" />
-        </svg>
-      )}
+      <img 
+        src={logoSrc || DEFAULT_LOGO_URL} 
+        alt="Mystarz Logo" 
+        className="w-full h-full object-contain"
+        onError={(e) => {
+          // 万が一読み込めない場合のフォールバック（altテキスト表示を防ぐため空にするか代替案）
+          if (logoSrc) setLogoSrc(null);
+        }}
+      />
     </div>
   );
 };
@@ -125,7 +125,7 @@ const AppContent = () => {
       <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-80 bg-slate-50 text-slate-900 transform transition-all duration-300 border-r border-slate-200 shadow-xl ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         <div className="p-8 border-b border-slate-200 flex justify-between items-center bg-white">
           <div className="flex items-center gap-4">
-            <MystarzLogo className="w-12 h-12" />
+            <MystarzLogo className="w-14 h-14" />
             <div>
                 <span className="font-black text-2xl tracking-tighter block leading-none text-slate-900">Mystarz</span>
                 <span className="text-[11px] font-black text-blue-600 uppercase tracking-widest mt-1 block">Report Pro</span>
