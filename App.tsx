@@ -88,32 +88,16 @@ const AuthScreen = ({ onAuthenticated }: { onAuthenticated: () => void }) => {
   );
 };
 
-// Mystarz ロゴコンポーネント
+// Mystarz ロゴコンポーネント (URLを統一)
 const MystarzLogo = ({ className }: { className?: string }) => {
-  const [logoSrc, setLogoSrc] = useState<string | null>(localStorage.getItem('app_custom_logo'));
-  const DEFAULT_LOGO_URL = 'http://www.mystarz.co.jp/M.png';
-
-  useEffect(() => {
-    const handleStorage = () => {
-      setLogoSrc(localStorage.getItem('app_custom_logo'));
-    };
-    window.addEventListener('storage', handleStorage);
-    const interval = setInterval(handleStorage, 1000);
-    return () => {
-      window.removeEventListener('storage', handleStorage);
-      clearInterval(interval);
-    };
-  }, []);
+  const LOGO_URL = 'http://www.mystarz.co.jp/M.png';
 
   return (
     <div className={`${className} overflow-hidden flex items-center justify-center bg-transparent`}>
       <img 
-        src={logoSrc || DEFAULT_LOGO_URL} 
+        src={LOGO_URL} 
         alt="Mystarz Logo" 
         className="w-full h-full object-contain"
-        onError={(e) => {
-          if (logoSrc) setLogoSrc(null);
-        }}
       />
     </div>
   );
