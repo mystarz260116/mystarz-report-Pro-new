@@ -34,7 +34,7 @@ const ManualStep = ({ step, icon: Icon, title, description, color }: any) => (
         <Icon className={`w-8 h-8 ${color.replace('bg-', 'text-')}`} />
       </div>
       <h3 className="font-black text-slate-900 mb-2">{title}</h3>
-      <p className="text-[11px] font-bold text-slate-500 leading-relaxed">{description}</p>
+      <div className="text-[11px] font-bold text-slate-500 leading-relaxed">{description}</div>
     </div>
   </div>
 );
@@ -111,7 +111,13 @@ const Settings: React.FC<SettingsProps> = ({ reports, onSuccess }) => {
                   step="1" 
                   icon={Calendar} 
                   title="日付と名前" 
-                  description="カレンダーから今日を選び、名前リストから自分の名前を選びます。"
+                  description={
+                    <>
+                      <p className="text-rose-600 font-black">日報を入力したい日を選び</p>
+                      <p>名前リストから自分の名前を選びます。</p>
+                      <p className="mt-2 text-slate-900">※【日付】【報告者名】は必須です。</p>
+                    </>
+                  }
                   color="bg-blue-600"
                 />
                 <ManualStep 
