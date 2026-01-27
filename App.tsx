@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { HashRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, PenTool, History, Menu, X, BarChart3, Cloud, AlertTriangle, RefreshCw, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, PenTool, History, Menu, X, BarChart3, Cloud, AlertTriangle, RefreshCw, ShieldCheck, Lock, ArrowRight, Delete } from 'lucide-react';
 import ReportForm from './components/ReportForm';
 import Dashboard from './components/Dashboard';
 import ReportList from './components/ReportList';
@@ -10,7 +10,85 @@ import Settings from './components/Settings';
 import { getReports, loadReportsFromGoogleSheets } from './services/reportService';
 import { DailyReport } from './types';
 
-// Mystarz ロゴコンポーネント (指定された画像URLを使用)
+// パスワード認証コンポーネント
+const AuthScreen = ({ onAuthenticated }: { onAuthenticated: () => void }) => {
+  const [pin, setPin] = useState('');
+  const [error, setError] = useState(false);
+  const correctPin = '7551';
+
+  const handleInput = (num: string) => {
+    if (pin.length < 4) {
+      const newPin = pin + num;
+      setPin(newPin);
+      setError(false);
+      if (newPin === correctPin) {
+        setTimeout(() => {
+          localStorage.setItem('mystarz_auth', 'true');
+          onAuthenticated();
+        }, 300);
+      } else if (newPin.length === 4) {
+        setTimeout(() => {
+          setError(true);
+          setPin('');
+        }, 300);
+      }
+    }
+  };
+
+  const handleDelete = () => setPin(pin.slice(0, -1));
+
+  return (
+    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 font-sans">
+      <div className="max-w-md w-full bg-slate-800/50 backdrop-blur-xl rounded-[3rem] p-10 border border-white/10 shadow-2xl text-center">
+        <div className="w-20 h-20 bg-blue-600 rounded-[2rem] flex items-center justify-center text-white mx-auto mb-8 shadow-xl shadow-blue-500/20">
+          <Lock className="w-10 h-10" />
+        </div>
+        <h1 className="text-3xl font-black text-white mb-2 tracking-tighter">認証が必要です</h1>
+        <p className="text-slate-400 font-bold text-sm mb-10">4桁のパスワードを入力してください</p>
+
+        <div className="flex justify-center gap-4 mb-12">
+          {[0, 1, 2, 3].map((i) => (
+            <div 
+              key={i} 
+              className={`w-4 h-4 rounded-full transition-all duration-300 ${
+                pin.length > i ? 'bg-blue-500 scale-125 shadow-[0_0_15px_rgba(59,130,246,0.5)]' : 'bg-slate-700'
+              } ${error ? 'bg-rose-500 animate-shake' : ''}`} 
+            />
+          ))}
+        </div>
+
+        <div className="grid grid-cols-3 gap-4 max-w-[280px] mx-auto">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+            <button
+              key={num}
+              onClick={() => handleInput(num.toString())}
+              className="h-16 w-16 bg-white/5 hover:bg-white/10 active:bg-blue-600/20 text-white text-2xl font-black rounded-2xl border border-white/5 transition-all flex items-center justify-center"
+            >
+              {num}
+            </button>
+          ))}
+          <div />
+          <button onClick={() => handleInput('0')} className="h-16 w-16 bg-white/5 hover:bg-white/10 text-white text-2xl font-black rounded-2xl border border-white/5 flex items-center justify-center">0</button>
+          <button onClick={handleDelete} className="h-16 w-16 bg-white/5 hover:bg-rose-500/20 text-rose-400 rounded-2xl border border-white/5 flex items-center justify-center transition-all">
+            <Delete className="w-8 h-8" />
+          </button>
+        </div>
+
+        {error && <p className="text-rose-500 font-black text-xs mt-8 animate-bounce">パスワードが正しくありません</p>}
+      </div>
+      <style>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-5px); }
+          75% { transform: translateX(5px); }
+        }
+        .animate-shake { animation: shake 0.2s ease-in-out infinite; }
+      `}</style>
+    </div>
+  );
+};
+
+// Mystarz ロゴコンポーネント
 const MystarzLogo = ({ className }: { className?: string }) => {
   const [logoSrc, setLogoSrc] = useState<string | null>(localStorage.getItem('app_custom_logo'));
   const DEFAULT_LOGO_URL = 'http://www.mystarz.co.jp/M.png';
@@ -34,7 +112,6 @@ const MystarzLogo = ({ className }: { className?: string }) => {
         alt="Mystarz Logo" 
         className="w-full h-full object-contain"
         onError={(e) => {
-          // 万が一読み込めない場合のフォールバック（altテキスト表示を防ぐため空にするか代替案）
           if (logoSrc) setLogoSrc(null);
         }}
       />
@@ -67,6 +144,7 @@ const NavLink = ({ to, icon: Icon, label, color, onClick, sublabel }: any) => {
 };
 
 const AppContent = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(localStorage.getItem('mystarz_auth') === 'true');
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [reports, setReports] = useState<DailyReport[]>([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -74,6 +152,7 @@ const AppContent = () => {
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     const loadData = async () => {
       setIsLoading(true);
       try {
@@ -88,7 +167,11 @@ const AppContent = () => {
       }
     };
     loadData();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, isAuthenticated]);
+
+  if (!isAuthenticated) {
+    return <AuthScreen onAuthenticated={() => setIsAuthenticated(true)} />;
+  }
 
   const handleSyncWithSheets = async () => {
     setIsLoading(true);
@@ -119,7 +202,7 @@ const AppContent = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white flex font-sans text-slate-900 antialiased">
+    <div className="min-h-screen bg-white flex font-sans text-slate-900 antialiased animate-in fade-in duration-700">
       {isSidebarOpen && <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden" onClick={closeSidebar} />}
 
       <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-80 bg-slate-50 text-slate-900 transform transition-all duration-300 border-r border-slate-200 shadow-xl ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
@@ -149,6 +232,9 @@ const AppContent = () => {
             <div className="p-6 space-y-4">
                 <button onClick={handleSyncWithSheets} disabled={isLoading} className="w-full flex items-center justify-center gap-3 py-5 bg-white border-2 border-emerald-500 text-emerald-600 hover:bg-emerald-50 rounded-[1.5rem] text-lg font-black transition-all shadow-sm active:scale-95">
                   {isLoading ? <RefreshCw className="w-6 h-6 animate-spin" /> : <Cloud className="w-6 h-6" />} 最新同期
+                </button>
+                <button onClick={() => { localStorage.removeItem('mystarz_auth'); window.location.reload(); }} className="w-full flex items-center justify-center gap-2 py-3 text-slate-400 hover:text-slate-600 text-xs font-bold transition-colors">
+                  <Lock className="w-3 h-3" /> ログアウトして画面をロック
                 </button>
             </div>
         </div>
