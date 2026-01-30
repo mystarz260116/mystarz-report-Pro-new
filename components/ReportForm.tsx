@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Department, DailyReport, DailyReportItem, ModelTimeEntry } from '../types';
 import { DEPARTMENT_CONFIGS, DEPARTMENTS_LIST, STAFF_GROUPS } from '../constants';
-import { Save, Plus, CheckCircle2, Clock, Loader2 } from 'lucide-react';
+import { Save, Plus, CheckCircle2, Clock, Loader2, MessageSquare, AlertCircle } from 'lucide-react';
 import { saveReport } from '../services/reportService';
 
 interface ReportFormProps {
@@ -428,6 +428,32 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
                   </div>
                 );
               })}
+            </div>
+          </div>
+
+          {/* 備考・問題点エリアの追加 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-100">
+            <div className="space-y-2">
+              <label className="text-sm font-black text-slate-700 flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-slate-400" /> 備考・連絡事項
+              </label>
+              <textarea
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
+                placeholder="特記事項があれば入力してください"
+                className="w-full h-24 border border-gray-300 rounded-xl p-3 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none resize-none transition-all"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-black text-rose-700 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-400" /> 問題点・課題
+              </label>
+              <textarea
+                value={issues}
+                onChange={(e) => setIssues(e.target.value)}
+                placeholder="トラブルや共有すべき問題があれば入力してください"
+                className="w-full h-24 border border-rose-200 rounded-xl p-3 text-sm bg-rose-50/30 focus:ring-2 focus:ring-rose-500 outline-none resize-none transition-all"
+              />
             </div>
           </div>
 
