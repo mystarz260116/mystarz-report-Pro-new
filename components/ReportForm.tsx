@@ -40,9 +40,14 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
     selfComp: number, 
     time: number
   }>>({});
-  const [otherSubItem, setOtherSubItem] = useState('トリミング');
+  
+  // 「その他」のカテゴリー選択状態（最大3つ）
+  const [otherSubItems, setOtherSubItems] = useState<string[]>(['トリミング', 'リリーフ', '上下接着']);
 
-  const otherCategories = ['トリミング', 'CAD', 'パターン', 'バリオ', 'ケンマ・仕上げ', '修正'];
+  const otherCategories = [
+    'トリミング', 'CAD', 'パターン', 'バリオ', 'ケンマ・仕上げ', 
+    '修正', 'リリーフ', 'ノンクラ調整', '上下接着'
+  ];
 
   // 部署に合わせて担当者リストを並べ替える
   const sortedStaffGroups = useMemo(() => {
@@ -76,6 +81,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
       const counts: Record<string, number> = {};
       const times: Record<string, number> = {};
       const dDetails: Record<string, any> = {};
+      const others: string[] = [];
 
       editData.items.forEach(item => {
         let itemName = item.itemName;
@@ -84,8 +90,20 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
         if (editData.department === Department.DENTURE && itemName.startsWith('その他 (')) {
             const match = itemName.match(/その他 \((.+)\)/);
             if (match) {
-                setOtherSubItem(match[1]);
-                itemName = 'その他';
+                const category = match[1];
+                const otherIdx = others.length;
+                if (otherIdx < 3) {
+                  others.push(category);
+                  const key = `その他-${otherIdx}`;
+                  dDetails[key] = {
+                      insured: item.countInsured || 0,
+                      insuredComp: item.countInsuredCompleted || 0,
+                      self: item.countSelf || 0,
+                      selfComp: item.countSelfCompleted || 0,
+                      time: item.timeMinutes || 0
+                  };
+                }
+                return; // その他として処理したので次へ
             }
         }
 
@@ -103,6 +121,13 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
         }
       });
 
+      if (others.length > 0) {
+        setOtherSubItems(prev => {
+          const newOnes = [...prev];
+          others.forEach((o, i) => { newOnes[i] = o; });
+          return newOnes;
+        });
+      }
       setItemCounts(counts);
       setItemTimes(times);
       setDentureDetails(dDetails);
@@ -115,7 +140,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
       setItemCounts({});
       setItemTimes({});
       setDentureDetails({});
-      setOtherSubItem('トリミング');
+      setOtherSubItems(['トリミング', 'リリーフ', '上下接着']);
     }
   }, [selectedDept, editData]);
 
@@ -184,11 +209,12 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
               selfComp: number;
               time: number;
           }][])
-              .filter(([_, d]) => d.insured > 0 || d.self > 0 || d.time > 0)
+              .filter(([name, d]) => d.insured > 0 || d.self > 0 || d.time > 0)
               .map(([name, d], idx) => {
                   let finalName = name;
-                  if (name === 'その他') {
-                      finalName = `その他 (${otherSubItem})`;
+                  if (name.startsWith('その他-')) {
+                      const otherIdx = parseInt(name.split('-')[1]);
+                      finalName = `その他 (${otherSubItems[otherIdx]})`;
                   }
                   return {
                       itemId: `d-${idx}-${Date.now()}`,
@@ -325,8 +351,6 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
               {currentConfig?.sections.map((section, secIdx) => {
                 if (hasTabs && activeSectionIndex !== secIdx) return null;
                 
-                // デンチャー部署で詳細入力が必要なタブか判定
-                // 「基本」と「3D/CAD」以外は詳細入力
                 const isDentureDetailedSection = selectedDept === Department.DENTURE && 
                                                  section.title !== '基本' && 
                                                  section.title !== '3D/CAD';
@@ -336,22 +360,47 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
                     <div className="grid grid-cols-1 gap-2">
                         {section.items.map((item) => {
                             if (isDentureDetailedSection) {
+                                // 「その他」項目の場合は3行表示する
+                                if (item === 'その他') {
+                                  return [0, 1, 2].map((idx) => {
+                                    const key = `その他-${idx}`;
+                                    const d = dentureDetails[key] || { insured: 0, insuredComp: 0, self: 0, selfComp: 0, time: 0 };
+                                    return (
+                                      <div key={key} className="bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-sm border-l-4 border-l-rose-500">
+                                        <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                                            <div className="lg:w-64 shrink-0 flex items-center gap-2">
+                                                <label className="text-sm font-black text-slate-700">その他 ({idx + 1})</label>
+                                                <select 
+                                                    value={otherSubItems[idx]} 
+                                                    onChange={(e) => {
+                                                      const newOnes = [...otherSubItems];
+                                                      newOnes[idx] = e.target.value;
+                                                      setOtherSubItems(newOnes);
+                                                    }}
+                                                    className="border border-slate-300 rounded px-2 py-1 text-xs bg-white focus:ring-1 focus:ring-blue-500 outline-none font-bold text-blue-600"
+                                                >
+                                                    {otherCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                                </select>
+                                            </div>
+                                            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 flex-1">
+                                                <input type="number" placeholder="保険" value={d.insured || ''} onChange={e => handleDentureDetailChange(key, 'insured', e.target.value)} className="border border-blue-200 bg-white rounded-lg p-2 text-sm text-blue-900 focus:ring-2 focus:ring-blue-400 outline-none" />
+                                                <input type="number" placeholder="完成" value={d.insuredComp || ''} onChange={e => handleDentureDetailChange(key, 'insuredComp', e.target.value)} className="border border-sky-200 bg-white rounded-lg p-2 text-sm text-sky-900 focus:ring-2 focus:ring-sky-400 outline-none" />
+                                                <input type="number" placeholder="自費" value={d.self || ''} onChange={e => handleDentureDetailChange(key, 'self', e.target.value)} className="border border-purple-200 bg-white rounded-lg p-2 text-sm text-purple-900 focus:ring-2 focus:ring-purple-400 outline-none" />
+                                                <input type="number" placeholder="完成" value={d.selfComp || ''} onChange={e => handleDentureDetailChange(key, 'selfComp', e.target.value)} className="border border-indigo-200 bg-white rounded-lg p-2 text-sm text-indigo-900 focus:ring-2 focus:ring-indigo-400 outline-none" />
+                                                <input type="number" placeholder="時間" value={d.time || ''} onChange={e => handleDentureDetailChange(key, 'time', e.target.value)} className="border border-orange-200 bg-white rounded-lg p-2 text-sm text-orange-900 focus:ring-2 focus:ring-orange-400 outline-none" />
+                                            </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  });
+                                }
+
                                 const d = dentureDetails[item] || { insured: 0, insuredComp: 0, self: 0, selfComp: 0, time: 0 };
                                 return (
                                     <div key={item} className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
                                         <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                                             <div className="lg:w-64 shrink-0 flex items-center gap-2">
                                                 <label className="text-sm font-bold text-gray-700">{item}</label>
-                                                {/* デンチャー「その他」項目専用のプルダウン */}
-                                                {selectedDept === Department.DENTURE && item === 'その他' && (
-                                                    <select 
-                                                        value={otherSubItem} 
-                                                        onChange={(e) => setOtherSubItem(e.target.value)}
-                                                        className="border border-gray-300 rounded px-2 py-1 text-xs bg-white focus:ring-1 focus:ring-blue-500 outline-none font-medium"
-                                                    >
-                                                        {otherCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                                                    </select>
-                                                )}
                                             </div>
                                             <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 flex-1">
                                                 <input 
@@ -398,7 +447,6 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
                                 <div key={item} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0 px-2">
                                     <label className="text-sm text-gray-600">{item}</label>
                                     <div className="flex items-center gap-2">
-                                        {/* 時間入力の追加（必要に応じて） */}
                                         {(section.title === '3D/CAD' || selectedDept === Department.CAD_CAM) && (
                                             <input
                                                 type="number"
@@ -431,7 +479,6 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
             </div>
           </div>
 
-          {/* 備考・問題点エリアの追加 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-100">
             <div className="space-y-2">
               <label className="text-sm font-black text-slate-700 flex items-center gap-2">
