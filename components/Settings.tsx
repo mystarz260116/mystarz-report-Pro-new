@@ -60,21 +60,21 @@ const Settings: React.FC<SettingsProps> = ({ reports, onSuccess }) => {
         <div className="flex bg-slate-100 p-1.5 rounded-[1.5rem] shadow-inner overflow-x-auto no-scrollbar">
           <button 
             onClick={() => setActiveTab('charts')}
-            className={`flex items-center gap-2 px-8 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap ${activeTab === 'charts' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+            className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap ${activeTab === 'charts' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
           >
             <BarChart3 className="w-4 h-4" /> 統計グラフ
           </button>
           <button 
             onClick={() => setActiveTab('history')}
-            className={`flex items-center gap-2 px-8 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap ${activeTab === 'history' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+            className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap ${activeTab === 'history' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
           >
             <History className="w-4 h-4" /> 履歴の確認
           </button>
           <button 
             onClick={() => setActiveTab('manual')}
-            className={`flex items-center gap-2 px-8 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap ${activeTab === 'manual' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+            className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap ${activeTab === 'manual' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
           >
-            <BookOpen className="w-4 h-4" /> 簡単入力マニュアル
+            <BookOpen className="w-4 h-4" /> マニュアル
           </button>
         </div>
       </div>

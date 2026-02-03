@@ -65,7 +65,7 @@ export const DEPARTMENT_CONFIGS: Record<Department, DeptConfig> = {
     label: 'パターン',
     color: '#10b981',
     sections: [
-      { title: '製作品目 (本数)', items: ['HR', 'FCK', 'インレー', 'ラミネート', 'コア', 'その他'] },
+      { title: '製作品目 (本数)', items: ['HB', 'HR', 'FCK', 'インレー', 'コア', 'その他', 'ラミネート'] },
     ],
   },
   [Department.INVEST_CUT]: {
@@ -93,7 +93,7 @@ export const DEPARTMENT_CONFIGS: Record<Department, DeptConfig> = {
     color: '#ec4899',
     sections: [
       { title: '工程', items: ['メタル(適合～オペーク)', '築盛(築盛)', '形態(コンタクト～形態)', '研磨(シリコン～)', 'ホワイトWAX(築盛～形態)', 'トリミング(チェック～)'] },
-      { title: '製作品目', items: ['トリミング', 'ハードレジン', 'HJK', 'HB(インレー/ジャケット)', 'HB(金属裏装)', 'ファイバーコア(自費)', 'ファイバーコア(保険)', 'CRインレー', 'CRアンレー', 'クラウン', 'インレー', 'ホワイトWAX'] },
+      { title: '製作品目', items: ['トリミング', 'ハードレジン', 'HJK', 'HB（インレー）', 'HB(アンレー)', 'HB(ジャケット)', 'HB(金属裏装)', 'ファイバーコア(自費)', 'ファイバーコア(保険)', 'CRインレー', 'CRアンレー', 'クラウン', 'インレー', 'ホワイトWAX'] },
       { title: 'CAD製作品目', items: ['CAD/CAM(設計)', 'CAD/CAM(完成)'] }
     ],
   },

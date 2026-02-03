@@ -456,18 +456,23 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
                                                 className="w-16 text-right border rounded-md p-2 text-sm border-amber-200 bg-amber-50/20"
                                             />
                                         )}
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            placeholder="0"
-                                            readOnly={item.includes('総数')}
-                                            value={itemCounts[item] === undefined ? '' : itemCounts[item]}
-                                            onChange={(e) => handleCountChange(item, e.target.value)}
-                                            className={`w-24 text-right border rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 
-                                              ${itemCounts[item] > 0 ? 'border-blue-500 bg-blue-50 font-bold' : 'border-gray-300'}
-                                              ${item.includes('総数') ? 'bg-slate-100 font-black cursor-not-allowed' : ''}
-                                            `}
-                                        />
+                                        <div className="flex items-center gap-1">
+                                          <input
+                                              type="number"
+                                              min="0"
+                                              placeholder="0"
+                                              readOnly={item.includes('総数')}
+                                              value={itemCounts[item] === undefined ? '' : itemCounts[item]}
+                                              onChange={(e) => handleCountChange(item, e.target.value)}
+                                              className={`w-24 text-right border rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 
+                                                ${itemCounts[item] > 0 ? 'border-blue-500 bg-blue-50 font-bold' : 'border-gray-300'}
+                                                ${item.includes('総数') ? 'bg-slate-100 font-black cursor-not-allowed' : ''}
+                                              `}
+                                          />
+                                          {selectedDept !== Department.DENTURE && (
+                                            <span className="text-xs font-bold text-slate-400 w-4">本</span>
+                                          )}
+                                        </div>
                                     </div>
                                 </div>
                             );
