@@ -60,7 +60,9 @@ export const saveReport = async (report: DailyReport): Promise<boolean> => {
 
 const saveReportToGoogleSheets = async (report: DailyReport): Promise<boolean> => {
   try {
-    const timestamp = new Date().toLocaleString('ja-JP');
+    // 日本時間での現在時刻をタイムスタンプとして使用
+    const now = new Date();
+    const timestamp = now.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
     const headers = [
         '保存日時', 'ID', '日付', '部署', '担当者', 
         '項目名', '数量(合計)', 
@@ -126,9 +128,25 @@ export const loadReportsFromGoogleSheets = async (): Promise<void> => {
     const result = await response.json();
     if (result.status === 'success' && Array.isArray(result.data)) {
       const reportsMap = new Map<string, DailyReport>();
+      
+      // 同一IDの中で「最新の保存日時」を持つものを特定するためのマップ
+      const latestTimestampMap = new Map<string, string>();
+
       result.data.forEach((row: any) => {
         const id = String(row['ID'] || '').trim();
+        const ts = String(row['保存日時'] || '');
         if (!id) return;
+        
+        // 保存日時を比較して最新のものを保持
+        if (!latestTimestampMap.has(id) || ts >= latestTimestampMap.get(id)!) {
+          latestTimestampMap.set(id, ts);
+        }
+      });
+
+      result.data.forEach((row: any) => {
+        const id = String(row['ID'] || '').trim();
+        const ts = String(row['保存日時'] || '');
+        if (!id || ts !== latestTimestampMap.get(id)) return;
         
         let r = reportsMap.get(id);
         if (!r) {

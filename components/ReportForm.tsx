@@ -189,10 +189,12 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
 
     try {
       let reportItems: DailyReportItem[] = [];
-      
-      // シンプル入力項目の抽出 (全部署共通)
+      const currentConfig = DEPARTMENT_CONFIGS[selectedDept];
+      const allAllowedItems = new Set(currentConfig.sections.flatMap(s => s.items));
+
+      // シンプル入力項目の抽出 (現在の部署の項目のみに絞り、0より大きいものだけを保存)
       const simpleItems: DailyReportItem[] = (Object.entries(itemCounts) as [string, number][])
-          .filter(([_, count]) => count > 0)
+          .filter(([name, count]) => count > 0 && allAllowedItems.has(name))
           .map(([name, count], idx) => ({
               itemId: `s-${idx}-${Date.now()}`,
               itemName: name,
@@ -209,7 +211,10 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
               selfComp: number;
               time: number;
           }][])
-              .filter(([name, d]) => d.insured > 0 || d.self > 0 || d.time > 0)
+              .filter(([name, d]) => {
+                const isOther = name.startsWith('その他-');
+                return (isOther || allAllowedItems.has(name)) && (d.insured > 0 || d.self > 0 || d.time > 0);
+              })
               .map(([name, d], idx) => {
                   let finalName = name;
                   if (name.startsWith('その他-')) {
