@@ -46,6 +46,7 @@ export const getReports = (): DailyReport[] => {
 export const saveReport = async (report: DailyReport): Promise<boolean> => {
   try {
     const existing = getReports();
+    // 既存の同じIDを削除（ローカルでの重複排除）
     const filtered = existing.filter(r => r.id !== report.id);
     const updated = [report, ...filtered];
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
@@ -60,9 +61,8 @@ export const saveReport = async (report: DailyReport): Promise<boolean> => {
 
 const saveReportToGoogleSheets = async (report: DailyReport): Promise<boolean> => {
   try {
-    // 日本時間での現在時刻をタイムスタンプとして使用
-    const now = new Date();
-    const timestamp = now.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
+    // 比較しやすいISO形式のタイムスタンプを使用
+    const timestamp = new Date().toISOString();
     const headers = [
         '保存日時', 'ID', '日付', '部署', '担当者', 
         '項目名', '数量(合計)', 
@@ -137,7 +137,6 @@ export const loadReportsFromGoogleSheets = async (): Promise<void> => {
         const ts = String(row['保存日時'] || '');
         if (!id) return;
         
-        // 保存日時を比較して最新のものを保持
         if (!latestTimestampMap.has(id) || ts >= latestTimestampMap.get(id)!) {
           latestTimestampMap.set(id, ts);
         }
@@ -163,7 +162,7 @@ export const loadReportsFromGoogleSheets = async (): Promise<void> => {
             items: [], 
             remarks: String(row['備考'] || ''), 
             issues: String(row['問題点'] || ''), 
-            createdAt: Date.now()
+            createdAt: new Date(ts).getTime() || Date.now()
           };
           reportsMap.set(id, r);
         }
@@ -215,37 +214,40 @@ export const exportDataJSON = () => {
   link.click();
 };
 
+// JSON形式でのデータをマージ（既存のデータに上書きせず追加）
+export const mergeDataJSON = async (data: any): Promise<boolean> => {
+  try {
+    if (!Array.isArray(data)) return false;
+    const existing = getReports();
+    const existingIds = new Set(existing.map(r => r.id));
+    
+    // 既存IDと重複しないデータのみ抽出
+    const newReports = data.filter((r: any) => r && r.id && !existingIds.has(r.id));
+    const merged = [...existing, ...newReports];
+    
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+    return true;
+  } catch (error) {
+    console.error('Merge error:', error);
+    return false;
+  }
+};
+
+// JSON形式でのデータをインポート（既存のデータを上書き）
+export const importDataJSON = (data: any): boolean => {
+  try {
+    if (!Array.isArray(data)) return false;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    return true;
+  } catch (error) {
+    console.error('Import error:', error);
+    return false;
+  }
+};
+
 export const clearAllReports = () => {
   if (window.confirm('ブラウザに保存されているすべての日報データを削除しますか？')) {
     localStorage.removeItem(STORAGE_KEY);
     window.location.reload();
-  }
-};
-
-// 外部JSONデータを現在のデータに統合（重複はIDで排除）
-export const mergeDataJSON = (newData: any): boolean => {
-  try {
-    const newItems = Array.isArray(newData) ? newData : [];
-    const existing = getReports();
-    const existingIds = new Set(existing.map(r => r.id));
-    const filteredNew = newItems.filter((r: any) => r.id && !existingIds.has(r.id));
-    const updated = [...filteredNew, ...existing];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    return true;
-  } catch (e) {
-    console.error('Merge error:', e);
-    return false;
-  }
-};
-
-// 外部JSONデータを現在のデータに上書き
-export const importDataJSON = (data: any): boolean => {
-  try {
-    const items = Array.isArray(data) ? data : [];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    return true;
-  } catch (e) {
-    console.error('Import error:', e);
-    return false;
   }
 };

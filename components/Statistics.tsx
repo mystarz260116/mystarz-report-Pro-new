@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { DailyReport, Department } from '../types';
-import { DEPARTMENTS_LIST, isHoliday } from '../constants';
+import { DEPARTMENTS_LIST, DEPARTMENT_CONFIGS, isHoliday } from '../constants';
 import { ChevronLeft, ChevronRight, Table, Filter, Sigma, Calendar as CalendarIcon, Info, Download } from 'lucide-react';
 
 interface StatisticsProps {
@@ -9,7 +9,6 @@ interface StatisticsProps {
 }
 
 const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
-  // 初期表示を「現在の月」の1日に設定
   const [currentDate, setCurrentDate] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -68,8 +67,14 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
 
     const safeReports = Array.isArray(reports) ? reports : [];
     
-    safeReports.forEach(r => {
-      // 修正：日付標準化を強化
+    // --- 🛠️ 重複排除: IDごとに最新のcreatedAtを持つものだけを最新の保存として採用 ---
+    const dedupedMap = new Map<string, DailyReport>();
+    [...safeReports].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)).forEach(r => {
+      dedupedMap.set(r.id, r);
+    });
+    const finalReports = Array.from(dedupedMap.values());
+
+    finalReports.forEach(r => {
       if (!r.date) return;
       const normalized = r.date.split(/[T ]/)[0].replace(/\//g, '-');
       const dateParts = normalized.split('-');
@@ -84,16 +89,12 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
           let targetDept = r.department;
           const itemName = item.itemName;
           
-          // ルール1: CAD/CAM(設計) と CAD/CAM(完成) は常にCAD/CAM部門に集計
           if (itemName === 'CAD/CAM(設計)' || itemName === 'CAD/CAM(完成)') {
               targetDept = Department.CAD_CAM;
           } else {
-              // ルール2: 大阪模型の特定項目は除外（大阪模型のまま）
               const isOsakaCadItem = itemName === 'ノーマル模型【CAD】(総製作)' || itemName === '貼り付け模型【CAD】(総製作)';
-              // ルール3: デンチャー部門のCAD関連も除外（デンチャーのまま）
               const isDentureCadItem = r.department === Department.DENTURE;
               
-              // 上記以外で「CAD」という文字列が含まれている場合はCAD/CAMセクションに統合する
               if (itemName.includes('CAD') && !isOsakaCadItem && !isDentureCadItem) {
                   targetDept = Department.CAD_CAM;
               }
@@ -102,14 +103,23 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
           const info = deptMap.get(targetDept);
           if (!info) return;
 
-          if (!info.items.has(item.itemName)) info.items.set(item.itemName, new Map());
-          const dayMap = info.items.get(item.itemName)!;
-          
+          // 各項目ごとの集計
+          if (!info.items.has(itemName)) info.items.set(itemName, new Map());
+          const dayMap = info.items.get(itemName)!;
           const currentCount = dayMap.get(d) || 0;
           dayMap.set(d, currentCount + item.count);
           
-          const currentDailyTotal = info.dailyTotal.get(d) || 0;
-          info.dailyTotal.set(d, currentDailyTotal + item.count);
+          // 🛠️ 部署全体の合計計算ロジック
+          // 大阪模型の場合は「総数」と名のつく項目のみを合計に合算する（重複防止）
+          let shouldAddToDailyTotal = true;
+          if (targetDept === Department.OSAKA_MODEL && !itemName.includes('総数')) {
+              shouldAddToDailyTotal = false;
+          }
+
+          if (shouldAddToDailyTotal) {
+              const currentDailyTotal = info.dailyTotal.get(d) || 0;
+              info.dailyTotal.set(d, currentDailyTotal + item.count);
+          }
         });
       }
     });
@@ -127,8 +137,13 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
       const data = tableData.get(dept.id);
       if (!data || data.items.size === 0) return;
 
-      const itemNames = Array.from(data.items.keys()).sort() as string[];
-      itemNames.forEach(name => {
+      const configItems = DEPARTMENT_CONFIGS[dept.id].sections.flatMap(s => s.items);
+      const dataItems = Array.from(data.items.keys());
+      const sortedItemNames = configItems.filter(name => dataItems.includes(name));
+      const extraItems = dataItems.filter(name => !configItems.includes(name)).sort();
+      const finalItemNames = [...sortedItemNames, ...extraItems];
+
+      finalItemNames.forEach(name => {
         const dayMap = data.items.get(name);
         const row: string[] = [dept.label, name];
         let monthlySum = 0;
@@ -240,7 +255,12 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
               {DEPARTMENTS_LIST.filter(d => filterDept === 'ALL' || filterDept === d.id).map(dept => {
                 const data = tableData.get(dept.id);
                 if (!data || data.items.size === 0) return null;
-                const itemNames = Array.from(data.items.keys()).sort() as string[];
+                
+                const configItems = DEPARTMENT_CONFIGS[dept.id].sections.flatMap(s => s.items);
+                const dataItems = Array.from(data.items.keys());
+                const sortedItemNames = configItems.filter(name => dataItems.includes(name));
+                const extraItems = dataItems.filter(name => !configItems.includes(name)).sort();
+                const finalItemNames = [...sortedItemNames, ...extraItems];
 
                 return (
                   <React.Fragment key={dept.id}>
@@ -250,7 +270,7 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
                       <td className="sticky right-0 bg-blue-50 border-l border-blue-100"></td>
                     </tr>
 
-                    {itemNames.map(name => {
+                    {finalItemNames.map(name => {
                       const dayMap = data.items.get(name);
                       const monthlyTotal = (Array.from(dayMap?.values() || []) as number[]).reduce((a: number, b: number) => a + b, 0);
                       
@@ -309,7 +329,7 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
          <div className="text-xs text-blue-800 leading-relaxed">
             <p className="font-bold mb-1">表示が反映されない場合</p>
             <p>スプレッドシートからデータを再読み込みするには、サイドバーの「最新データを取得」ボタンを押してください。</p>
-            <p className="mt-1">※ 日付形式の互換性を向上させ、Googleスプレッドシート上の日付（スラッシュ区切り、1桁月日など）も正しく標準化して読み取れるように修正しました。</p>
+            <p className="mt-1">※ 大阪模型の合計は「総数（急ぎ）」と「総数（総製作）」のみを足すように修正されました。</p>
          </div>
       </div>
     </div>

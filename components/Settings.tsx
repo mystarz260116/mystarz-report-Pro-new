@@ -11,10 +11,12 @@ import {
   Save,
   Cloud,
   Lock,
-  ArrowRight
+  ArrowRight,
+  DatabaseZap
 } from 'lucide-react';
 import Dashboard from './Dashboard';
 import ReportList from './ReportList';
+import MigrationAssistant from './MigrationAssistant';
 import { DailyReport } from '../types';
 
 interface SettingsProps {
@@ -22,7 +24,7 @@ interface SettingsProps {
   onSuccess: () => void;
 }
 
-type TabType = 'charts' | 'history' | 'manual';
+type TabType = 'charts' | 'history' | 'manual' | 'migration';
 
 const ManualStep = ({ step, icon: Icon, title, description, color }: any) => (
   <div className="bg-white border border-slate-100 p-6 rounded-[2rem] shadow-sm relative group hover:shadow-md transition-all">
@@ -57,7 +59,7 @@ const Settings: React.FC<SettingsProps> = ({ reports, onSuccess }) => {
         </div>
 
         {/* タブ切り替えボタン */}
-        <div className="flex bg-slate-100 p-1.5 rounded-[1.5rem] shadow-inner overflow-x-auto no-scrollbar">
+        <div className="flex bg-slate-100 p-1.5 rounded-[1.5rem] shadow-inner overflow-x-auto no-scrollbar max-w-full">
           <button 
             onClick={() => setActiveTab('charts')}
             className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap ${activeTab === 'charts' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
@@ -76,6 +78,12 @@ const Settings: React.FC<SettingsProps> = ({ reports, onSuccess }) => {
           >
             <BookOpen className="w-4 h-4" /> マニュアル
           </button>
+          <button 
+            onClick={() => setActiveTab('migration')}
+            className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap ${activeTab === 'migration' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+          >
+            <DatabaseZap className="w-4 h-4" /> データ移行
+          </button>
         </div>
       </div>
 
@@ -91,6 +99,10 @@ const Settings: React.FC<SettingsProps> = ({ reports, onSuccess }) => {
           <div className="bg-white rounded-[2.5rem] overflow-hidden border border-slate-200 shadow-sm">
             <ReportList reports={reports} />
           </div>
+        )}
+
+        {activeTab === 'migration' && (
+          <MigrationAssistant />
         )}
 
         {activeTab === 'manual' && (

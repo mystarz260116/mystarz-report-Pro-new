@@ -10,45 +10,54 @@ interface DashboardProps { label?: string; reports: DailyReport[] }
 
 const Dashboard: React.FC<DashboardProps> = ({ reports }) => {
   
+  // --- 🛠️ 重複排除処理 ---
+  const finalReports = useMemo(() => {
+    const safeReports = Array.isArray(reports) ? reports : [];
+    const dedupedMap = new Map<string, DailyReport>();
+    [...safeReports].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)).forEach(r => {
+      dedupedMap.set(r.id, r);
+    });
+    return Array.from(dedupedMap.values());
+  }, [reports]);
+
   const deptProductionData = useMemo(() => {
     const data: Record<string, { name: string, count: number, color: string }> = {};
     Object.values(Department).forEach(d => {
       data[d] = { name: DEPARTMENT_CONFIGS[d].label, count: 0, color: DEPARTMENT_CONFIGS[d].color };
     });
 
-    reports.forEach(r => {
+    finalReports.forEach(r => {
       r.items.forEach(item => {
         let targetDept = r.department;
         const itemName = item.itemName;
         
-        // ルール1: CAD/CAM(設計) と CAD/CAM(完成) は常にCAD/CAM部門に集計
         if (itemName === 'CAD/CAM(設計)' || itemName === 'CAD/CAM(完成)') {
             targetDept = Department.CAD_CAM;
         } else {
-            // ルール2: 特定の項目を統合から除外する
             const isOsakaCadItem = itemName === 'ノーマル模型【CAD】(総製作)' || itemName === '貼り付け模型【CAD】(総製作)';
             const isDentureCadItem = r.department === Department.DENTURE;
             
-            // 「CAD」という文字列が含まれており、かつ除外対象でない場合はCAD/CAMセクションに統合する
             if (itemName.includes('CAD') && !isOsakaCadItem && !isDentureCadItem) {
                 targetDept = Department.CAD_CAM;
             }
         }
         
         if (data[targetDept]) {
-            data[targetDept].count += item.count;
+            // 大阪模型の場合は「総数」項目のみをカウント（二重計上防止）
+            if (targetDept !== Department.OSAKA_MODEL || itemName.includes('総数')) {
+                data[targetDept].count += item.count;
+            }
         }
       });
     });
 
     return Object.values(data).filter(d => d.count > 0).sort((a, b) => b.count - a.count);
-  }, [reports]);
+  }, [finalReports]);
 
   const monthlyTrend = useMemo(() => {
     const trend: Record<string, number> = {};
     const now = new Date();
     
-    // 過去30日分の枠を作成 (日本時間基準)
     for(let i = 29; i >= 0; i--) {
       const d = new Date();
       d.setDate(now.getDate() - i);
@@ -59,20 +68,26 @@ const Dashboard: React.FC<DashboardProps> = ({ reports }) => {
       trend[dateKey] = 0;
     }
 
-    // データの集計
-    reports.forEach(r => {
+    finalReports.forEach(r => {
       if (!r.date) return;
       const normalizedDate = standardizeDate(r.date);
       if (trend[normalizedDate] !== undefined) {
-        trend[normalizedDate] += r.items.reduce((sum, item) => sum + item.count, 0);
+        // 全社トレンドでも大阪模型は「総数」のみを計算対象にする
+        const dailySum = r.items.reduce((sum, item) => {
+            if (r.department === Department.OSAKA_MODEL && !item.itemName.includes('総数')) {
+                return sum;
+            }
+            return sum + item.count;
+        }, 0);
+        trend[normalizedDate] += dailySum;
       }
     });
 
     return Object.entries(trend).map(([date, count]) => ({
-      date: date.substring(5), // "MM-DD" 形式
+      date: date.substring(5),
       count
     }));
-  }, [reports]);
+  }, [finalReports]);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
