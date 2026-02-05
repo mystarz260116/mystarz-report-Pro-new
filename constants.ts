@@ -65,7 +65,7 @@ export const DEPARTMENT_CONFIGS: Record<Department, DeptConfig> = {
     label: 'パターン',
     color: '#10b981',
     sections: [
-      { title: '製作品目 (本数)', items: ['HB', 'HR', 'FCK', 'インレー', 'コア', 'その他', 'ラミネート'] },
+      { title: '製作品目 (本数)', items: ['HB', 'HR', 'FCK', 'インレー', 'コア', 'その他', 'ラミネート', '3Dプリンター'] },
     ],
   },
   [Department.INVEST_CUT]: {

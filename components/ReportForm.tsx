@@ -452,7 +452,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
                                 <div key={item} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0 px-2">
                                     <label className="text-sm text-gray-600">{item}</label>
                                     <div className="flex items-center gap-2">
-                                        {(section.title === '3D/CAD' || selectedDept === Department.CAD_CAM) && (
+                                        {(section.title === '3D/CAD' || selectedDept === Department.CAD_CAM || item === '3Dプリンター') && (
                                             <input
                                                 type="number"
                                                 placeholder="分"
