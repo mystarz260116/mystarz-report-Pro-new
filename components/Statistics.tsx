@@ -24,11 +24,16 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
     const vMonth = currentDate.getMonth();
     
     const isThisMonth = (now.getFullYear() === vYear && now.getMonth() === vMonth);
-    const endDay = isThisMonth ? now.getDate() : new Date(vYear, vMonth + 1, 0).getDate();
+    
+    // 🛠️ 修正: 今月の場合は「今日」を除いた「昨日」までの日付を末尾とする（分母のマイナス1対応）
+    const endDay = isThisMonth 
+      ? Math.max(0, now.getDate() - 1) 
+      : new Date(vYear, vMonth + 1, 0).getDate();
 
     let businessDays = 0;
     const activeDays: number[] = [];
 
+    // 指定された末尾の日付までの稼働日をカウント
     for (let d = 1; d <= endDay; d++) {
       const dateToCheck = new Date(vYear, vMonth, d);
       if (!isHoliday(dateToCheck)) {
@@ -42,7 +47,8 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
       activeDays,
       endDay,
       vYear,
-      vMonth
+      vMonth,
+      isThisMonth
     };
   }, [currentDate]);
 
@@ -63,7 +69,7 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
         dailyTotal: Map<number, number>;
     }>();
 
-    DEPARTMENTS_LIST.forEach(d => deptMap.set(d.id, { items: new Map(), dailyTotal: new Map() }));
+    DEPARTMENTS_LIST.forEach(d => deptMap.set(d.id, { items: new Map<string, Map<number, number>>(), dailyTotal: new Map<number, number>() }));
 
     const safeReports = Array.isArray(reports) ? reports : [];
     
@@ -104,7 +110,7 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
           if (!info) return;
 
           // 各項目ごとの集計
-          if (!info.items.has(itemName)) info.items.set(itemName, new Map());
+          if (!info.items.has(itemName)) info.items.set(itemName, new Map<number, number>());
           const dayMap = info.items.get(itemName)!;
           const currentCount = dayMap.get(d) || 0;
           dayMap.set(d, currentCount + item.count);
@@ -138,12 +144,12 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
       if (!data || data.items.size === 0) return;
 
       const configItems = DEPARTMENT_CONFIGS[dept.id].sections.flatMap(s => s.items);
-      const dataItems = Array.from(data.items.keys());
+      const dataItems: string[] = Array.from(data.items.keys());
       const sortedItemNames = configItems.filter(name => dataItems.includes(name));
       const extraItems = dataItems.filter(name => !configItems.includes(name)).sort();
-      const finalItemNames = [...sortedItemNames, ...extraItems];
+      const finalItemNames: string[] = [...sortedItemNames, ...extraItems];
 
-      finalItemNames.forEach(name => {
+      finalItemNames.forEach((name: string) => {
         const dayMap = data.items.get(name);
         const row: string[] = [dept.label, name];
         let monthlySum = 0;
@@ -152,12 +158,14 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
         daysInMonth.forEach(d => {
           const day = d.getDate();
           const val = dayMap?.get(day) || 0;
-          row.push(val.toString());
+          // Fix: Ensure val is explicitly stringified to avoid 'unknown' assignment issues
+          row.push(String(val));
           monthlySum += val;
           if (calcInfo.activeDays.includes(day)) businessSum += val;
         });
 
-        row.push(monthlySum.toString());
+        // Fix: Explicitly convert monthlySum to string
+        row.push(String(monthlySum));
         row.push((businessSum / calcInfo.denom).toFixed(1));
         csvRows.push(row);
       });
@@ -168,11 +176,11 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
       daysInMonth.forEach(d => {
         const day = d.getDate();
         const val = data.dailyTotal.get(day) || 0;
-        totalRow.push(val.toString());
+        totalRow.push(String(val));
         deptMonthlySum += val;
         if (calcInfo.activeDays.includes(day)) deptBusinessSum += val;
       });
-      totalRow.push(deptMonthlySum.toString());
+      totalRow.push(String(deptMonthlySum));
       totalRow.push((deptBusinessSum / calcInfo.denom).toFixed(1));
       csvRows.push(totalRow);
       csvRows.push([]);
@@ -200,7 +208,7 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
                <span className="text-slate-500 font-bold text-xs uppercase tracking-wider">{calcInfo.vYear}年 {calcInfo.vMonth + 1}月</span>
                <div className="bg-blue-600 text-white px-3 py-1 rounded-full text-[10px] font-black flex items-center gap-1 shadow-sm">
                  <CalendarIcon className="w-3 h-3" />
-                 計算の分母：{calcInfo.denom} 日間 (稼働日のみ)
+                 計算の分母：{calcInfo.denom} 日間 {calcInfo.isThisMonth ? '(昨日まで)' : '(全稼働日)'}
                </div>
             </div>
           </div>
@@ -257,10 +265,10 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
                 if (!data || data.items.size === 0) return null;
                 
                 const configItems = DEPARTMENT_CONFIGS[dept.id].sections.flatMap(s => s.items);
-                const dataItems = Array.from(data.items.keys());
+                const dataItems: string[] = Array.from(data.items.keys());
                 const sortedItemNames = configItems.filter(name => dataItems.includes(name));
                 const extraItems = dataItems.filter(name => !configItems.includes(name)).sort();
-                const finalItemNames = [...sortedItemNames, ...extraItems];
+                const finalItemNames: string[] = [...sortedItemNames, ...extraItems];
 
                 return (
                   <React.Fragment key={dept.id}>
@@ -270,7 +278,7 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
                       <td className="sticky right-0 bg-blue-50 border-l border-blue-100"></td>
                     </tr>
 
-                    {finalItemNames.map(name => {
+                    {finalItemNames.map((name: string) => {
                       const dayMap = data.items.get(name);
                       const monthlyTotal = (Array.from(dayMap?.values() || []) as number[]).reduce((a: number, b: number) => a + b, 0);
                       
@@ -280,6 +288,7 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
 
                       return (
                         <tr key={name} className="border-b hover:bg-slate-50/50 transition-colors group">
+                          {/* Fix: Explicitly handle 'name' as string to resolve TS errors */}
                           <td className="p-3 text-slate-600 border-r sticky left-0 bg-white truncate group-hover:bg-slate-50 z-20 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">{name}</td>
                           {daysInMonth.map(d => {
                             const val = dayMap?.get(d.getDate()) || 0;
@@ -329,7 +338,10 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
          <div className="text-xs text-blue-800 leading-relaxed">
             <p className="font-bold mb-1">表示が反映されない場合</p>
             <p>スプレッドシートからデータを再読み込みするには、サイドバーの「最新データを取得」ボタンを押してください。</p>
-            <p className="mt-1">※ 大阪模型の合計は「総数（急ぎ）」と「総数（総製作）」のみを足すように修正されました。</p>
+            <div className="mt-1 space-y-1">
+                <p>※ 大阪模型の合計は「総数（急ぎ）」と「総数（総製作）」のみを足すように設定されています。</p>
+                <p className="font-bold">※ 平均値の分母（稼働日数）は、当日のデータ入力が翌営業日のため、本日分を除いた「昨日まで」の累計で計算しています。</p>
+            </div>
          </div>
       </div>
     </div>
