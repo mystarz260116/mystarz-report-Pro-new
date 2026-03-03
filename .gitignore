@@ -5,3 +5,6 @@ dist-ssr
 .vscode
 .DS_Store
 .vercel
+.env
+.env.local
+.env.*.local
