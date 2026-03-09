@@ -209,6 +209,23 @@ const AppContent = () => {
 
                 <div className="mt-12">
                     <p className="px-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">管理設定</p>
+                    
+                    {/* 1か月アンケートリンク */}
+                    <a
+                      href="https://forms.gle/niHPJoDR2Vh8Smdn7"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-4 px-6 py-5 rounded-[1.5rem] transition-all duration-200 mb-3 bg-emerald-500 hover:bg-emerald-600 text-white shadow-xl"
+                    >
+                      <div className="p-2.5 rounded-xl bg-white/20">
+                        <span className="text-xl">📋</span>
+                      </div>
+                      <div>
+                        <span className="font-black text-lg tracking-tight block leading-tight">1か月アンケート</span>
+                        <span className="text-[11px] font-bold block mt-0.5 text-white/70">1分で終わります！ぜひご協力を</span>
+                      </div>
+                    </a>
+
                     <NavLink to="/admin" icon={ShieldCheck} label="管理者メニュー" sublabel="実績グラフ・履歴の確認" color="text-slate-700" onClick={closeSidebar} />
                 </div>
             </nav>
