@@ -514,7 +514,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
             </div>
           </div>
 
-          <div className="flex justify-center pt-4">
+ <div className="flex flex-col items-center gap-4 pt-4">
             <button 
               type="submit" 
               disabled={isSaving}
@@ -524,6 +524,16 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
             >
               {isSaving ? <Loader2 className="animate-spin" /> : <Save />} 日報を保存して報告
             </button>
+
+            {/* 1か月アンケートリンク */}
+            <a
+              href="https://forms.gle/niHPJoDR2Vh8Smdn7"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-8 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-black rounded-full shadow-md transition-all active:scale-95 text-sm"
+            >
+              📋 1か月アンケートに答える（1分で終わります！）
+            </a>
           </div>
         </form>
       </div>
