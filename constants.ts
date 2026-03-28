@@ -102,8 +102,8 @@ export const DEPARTMENT_CONFIGS: Record<Department, DeptConfig> = {
     label: '完成C',
     color: '#6366f1',
     sections: [
-      { title: '調整・適合', items: ['調整・適合', '調整・コンタクト', '調整・バイト', 'ネジ付け・FMC/In', '研磨・FMC/In', '研磨・ブリッジ', '研磨・コア', 'ネジ外し・FMC/In', 'レーズ・ブリッジ'] },
-      { title: '品目', items: ['クラウン', 'インレー', 'コア', '自費クラウン', '自費インレー', '自費コア'] }
+      { title: '品目', items: ['クラウン', 'インレー', 'コア', '自費クラウン', '自費インレー', '自費コア'] },
+      { title: '調整・適合', items: ['調整・適合', '調整・コンタクト', '調整・バイト', 'ネジ付け・FMC/In', '研磨・FMC/In', '研磨・ブリッジ', '研磨・コア', 'ネジ外し・FMC/In', 'レーズ・ブリッジ'] }
     ],
   },
   [Department.CAD_CAM]: {
