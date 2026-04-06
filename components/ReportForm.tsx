@@ -272,7 +272,8 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
   };
 
   const currentConfig = DEPARTMENT_CONFIGS[selectedDept];
-  const hasTabs = [Department.DENTURE, Department.COMPLETE_A, Department.COMPLETE_B, Department.COMPLETE_C, Department.CAD_CAM_2].includes(selectedDept);
+  const hasTabs = [Department.DENTURE, Department.COMPLETE_A, Department.COMPLETE_B, Department.COMPLETE_C].includes(selectedDept);
+  const showSectionTitles = selectedDept === Department.CAD_CAM_2;
 
   const getItemUnit = (item: string): string => {
     if (selectedDept === Department.CAD_CAM_1 && (item === 'スキャン' || item === '3Dプリンター')) return 'ケース';
@@ -367,6 +368,12 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
 
                 return (
                   <div key={secIdx} className="space-y-3">
+                    {showSectionTitles && (
+                      <div className="flex items-center gap-2 pt-2">
+                        <span className="text-xs font-black text-slate-500 uppercase tracking-wider px-2 py-1 bg-slate-100 rounded-md">{section.title}</span>
+                        <div className="flex-1 h-px bg-slate-200" />
+                      </div>
+                    )}
                     <div className="grid grid-cols-1 gap-2">
                         {section.items.map((item) => {
                             if (isDentureDetailedSection) {
@@ -454,7 +461,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
                                 );
                             }
                             {
-                                const displayLabel = (hasTabs && item.startsWith(section.title + ' '))
+                                const displayLabel = ((hasTabs || showSectionTitles) && item.startsWith(section.title + ' '))
                                   ? item.slice(section.title.length + 1)
                                   : item;
                                 return (
