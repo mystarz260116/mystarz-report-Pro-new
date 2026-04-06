@@ -132,6 +132,35 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
     return deptMap;
   }, [currentDate, reports]);
 
+  // computedRows設定を持つ部署用に、表示行リストを構築するヘルパー
+  const buildDisplayRows = (dept: typeof DEPARTMENTS_LIST[0], data: { items: Map<string, Map<number, number>>; dailyTotal: Map<number, number> }) => {
+    const configItems = DEPARTMENT_CONFIGS[dept.id].sections.flatMap(s => s.items);
+    const dataItems: string[] = Array.from(data.items.keys());
+    const sortedItemNames = configItems.filter(name => dataItems.includes(name));
+    const extraItems = dataItems.filter(name => !configItems.includes(name)).sort();
+    const baseNames: string[] = [...sortedItemNames, ...extraItems];
+    const computedRowsConfig = DEPARTMENT_CONFIGS[dept.id].computedRows || [];
+
+    const displayRows: { name: string; isComputed?: boolean; sumItems?: string[] }[] = [];
+    baseNames.forEach(name => {
+      displayRows.push({ name });
+      const computed = computedRowsConfig.find(c => c.afterItem === name);
+      if (computed) {
+        displayRows.push({ name: computed.name, isComputed: true, sumItems: computed.sumItems });
+      }
+    });
+    return displayRows;
+  };
+
+  const getComputedDayMap = (sumItems: string[], data: { items: Map<string, Map<number, number>> }): Map<number, number> => {
+    const result = new Map<number, number>();
+    sumItems.forEach(si => {
+      const siMap = data.items.get(si);
+      if (siMap) siMap.forEach((val, day) => result.set(day, (result.get(day) || 0) + val));
+    });
+    return result;
+  };
+
   const handleDownloadCSV = () => {
     const headers = ['部署', '品目'];
     daysInMonth.forEach(d => headers.push(`${d.getDate()}日`));
@@ -143,14 +172,10 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
       const data = tableData.get(dept.id);
       if (!data || data.items.size === 0) return;
 
-      const configItems = DEPARTMENT_CONFIGS[dept.id].sections.flatMap(s => s.items);
-      const dataItems: string[] = Array.from(data.items.keys());
-      const sortedItemNames = configItems.filter(name => dataItems.includes(name));
-      const extraItems = dataItems.filter(name => !configItems.includes(name)).sort();
-      const finalItemNames: string[] = [...sortedItemNames, ...extraItems];
+      const displayRows = buildDisplayRows(dept, data);
 
-      finalItemNames.forEach((name: string) => {
-        const dayMap = data.items.get(name);
+      displayRows.forEach(({ name, isComputed, sumItems }) => {
+        const dayMap = isComputed ? getComputedDayMap(sumItems || [], data) : data.items.get(name);
         const row: string[] = [dept.label, name];
         let monthlySum = 0;
         let businessSum = 0;
@@ -158,13 +183,11 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
         daysInMonth.forEach(d => {
           const day = d.getDate();
           const val = dayMap?.get(day) || 0;
-          // Fix: Ensure val is explicitly stringified to avoid 'unknown' assignment issues
           row.push(String(val));
           monthlySum += val;
           if (calcInfo.activeDays.includes(day)) businessSum += val;
         });
 
-        // Fix: Explicitly convert monthlySum to string
         row.push(String(monthlySum));
         row.push((businessSum / calcInfo.denom).toFixed(1));
         csvRows.push(row);
@@ -263,12 +286,8 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
               {DEPARTMENTS_LIST.filter(d => filterDept === 'ALL' || filterDept === d.id).map(dept => {
                 const data = tableData.get(dept.id);
                 if (!data || data.items.size === 0) return null;
-                
-                const configItems = DEPARTMENT_CONFIGS[dept.id].sections.flatMap(s => s.items);
-                const dataItems: string[] = Array.from(data.items.keys());
-                const sortedItemNames = configItems.filter(name => dataItems.includes(name));
-                const extraItems = dataItems.filter(name => !configItems.includes(name)).sort();
-                const finalItemNames: string[] = [...sortedItemNames, ...extraItems];
+
+                const displayRows = buildDisplayRows(dept, data);
 
                 return (
                   <React.Fragment key={dept.id}>
@@ -278,28 +297,27 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
                       <td className="sticky right-0 bg-blue-50 border-l border-blue-100"></td>
                     </tr>
 
-                    {finalItemNames.map((name: string) => {
-                      const dayMap = data.items.get(name);
+                    {displayRows.map(({ name, isComputed, sumItems }) => {
+                      const dayMap = isComputed ? getComputedDayMap(sumItems || [], data) : data.items.get(name);
                       const monthlyTotal = (Array.from(dayMap?.values() || []) as number[]).reduce((a: number, b: number) => a + b, 0);
-                      
+
                       let businessSum = 0;
                       calcInfo.activeDays.forEach(d => businessSum += dayMap?.get(d) || 0);
                       const avg = (businessSum / calcInfo.denom).toFixed(1);
 
                       return (
-                        <tr key={name} className="border-b hover:bg-slate-50/50 transition-colors group">
-                          {/* Fix: Explicitly handle 'name' as string to resolve TS errors */}
-                          <td className="p-3 text-slate-600 border-r sticky left-0 bg-white truncate group-hover:bg-slate-50 z-20 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">{name}</td>
+                        <tr key={name} className={`border-b hover:bg-slate-50/50 transition-colors group ${isComputed ? 'bg-cyan-50/40' : ''}`}>
+                          <td className={`p-3 border-r sticky left-0 truncate z-20 shadow-[2px_0_5px_rgba(0,0,0,0.02)] ${isComputed ? 'bg-cyan-50/60 text-cyan-800 font-black group-hover:bg-cyan-50' : 'text-slate-600 bg-white group-hover:bg-slate-50'}`}>{name}</td>
                           {daysInMonth.map(d => {
                             const val = dayMap?.get(d.getDate()) || 0;
                             const isHolidayDate = isHoliday(d);
                             return (
-                              <td key={d.getDate()} className={`px-1 text-center border-r ${isHolidayDate ? 'bg-rose-50/20' : ''} ${val > 0 ? 'text-slate-900 font-bold' : 'text-slate-200'}`}>
+                              <td key={d.getDate()} className={`px-1 text-center border-r ${isHolidayDate ? 'bg-rose-50/20' : ''} ${val > 0 ? (isComputed ? 'text-cyan-800 font-black' : 'text-slate-900 font-bold') : 'text-slate-200'}`}>
                                 {val || '-'}
                               </td>
                             );
                           })}
-                          <td className="bg-slate-50 text-center font-black text-slate-700">{monthlyTotal.toLocaleString()}</td>
+                          <td className={`text-center font-black ${isComputed ? 'bg-cyan-100 text-cyan-900' : 'bg-slate-50 text-slate-700'}`}>{monthlyTotal.toLocaleString()}</td>
                           <td className="bg-blue-50/50 text-center font-black text-blue-700 sticky right-0 border-l border-blue-100 z-20 shadow-[-2px_0_5px_rgba(0,0,0,0.05)]">
                              {avg}
                              <div className="text-[8px] text-blue-300 font-normal leading-none mt-0.5">{businessSum}÷{calcInfo.denom}d</div>

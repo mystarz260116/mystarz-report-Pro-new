@@ -115,6 +115,40 @@ export const DEPARTMENT_CONFIGS: Record<Department, DeptConfig> = {
       { title: 'データ送り', items: ['3D (データ送り)', 'CAD/CAM冠 (データ送り)'] }
     ],
   },
+  [Department.CAD_CAM_1]: {
+    id: Department.CAD_CAM_1,
+    label: 'CAD/CAM①',
+    color: '#22d3ee',
+    sections: [
+      { title: '実績入力', items: ['トリミング', 'スキャン', 'CAM', '3Dプリンター'] }
+    ],
+  },
+  [Department.CAD_CAM_2]: {
+    id: Department.CAD_CAM_2,
+    label: 'CAD/CAM②（設計）',
+    color: '#06b6d4',
+    sections: [
+      { title: '模型あり', items: ['模型あり 前歯', '模型あり クラウン', '模型あり インレー'] },
+      { title: '模型なし', items: ['模型なし 前歯', '模型なし クラウン', '模型なし インレー'] },
+      { title: 'AI設計', items: ['AI設計 前歯', 'AI設計 クラウン', 'AI設計 インレー'] },
+    ],
+    computedRows: [
+      { afterItem: '模型あり インレー', name: '模型あり 合計', sumItems: ['模型あり 前歯', '模型あり クラウン', '模型あり インレー'] },
+      { afterItem: '模型なし インレー', name: '模型なし 合計', sumItems: ['模型なし 前歯', '模型なし クラウン', '模型なし インレー'] },
+      { afterItem: 'AI設計 インレー', name: 'AI設計 合計', sumItems: ['AI設計 前歯', 'AI設計 クラウン', 'AI設計 インレー'] },
+    ],
+  },
+  [Department.CAD_CAM_3]: {
+    id: Department.CAD_CAM_3,
+    label: 'CAD/CAM③（完成）',
+    color: '#0891b2',
+    sections: [
+      { title: '実績入力', items: ['模型あり', '模型なし'] }
+    ],
+    computedRows: [
+      { afterItem: '模型なし', name: '合計', sumItems: ['模型あり', '模型なし'] },
+    ],
+  },
   [Department.DENTURE]: {
     id: Department.DENTURE,
     label: 'デンチャー',
@@ -133,6 +167,7 @@ export const DEPARTMENT_CONFIGS: Record<Department, DeptConfig> = {
   },
 };
 
+// 統計・集計用（旧CAD/CAMも含めて過去データとCOMPLETE_A/Bのルーティングを維持）
 export const DEPARTMENTS_LIST = [
   DEPARTMENT_CONFIGS[Department.OSAKA_MODEL],
   DEPARTMENT_CONFIGS[Department.PATTERN],
@@ -141,5 +176,22 @@ export const DEPARTMENTS_LIST = [
   DEPARTMENT_CONFIGS[Department.COMPLETE_B],
   DEPARTMENT_CONFIGS[Department.COMPLETE_C],
   DEPARTMENT_CONFIGS[Department.CAD_CAM],
+  DEPARTMENT_CONFIGS[Department.CAD_CAM_1],
+  DEPARTMENT_CONFIGS[Department.CAD_CAM_2],
+  DEPARTMENT_CONFIGS[Department.CAD_CAM_3],
+  DEPARTMENT_CONFIGS[Department.DENTURE],
+];
+
+// フォームボタン用（CAD/CAM①②③を表示、旧CAD/CAMは非表示）
+export const FORM_DEPARTMENTS_LIST = [
+  DEPARTMENT_CONFIGS[Department.OSAKA_MODEL],
+  DEPARTMENT_CONFIGS[Department.PATTERN],
+  DEPARTMENT_CONFIGS[Department.INVEST_CUT],
+  DEPARTMENT_CONFIGS[Department.COMPLETE_A],
+  DEPARTMENT_CONFIGS[Department.COMPLETE_B],
+  DEPARTMENT_CONFIGS[Department.COMPLETE_C],
+  DEPARTMENT_CONFIGS[Department.CAD_CAM_1],
+  DEPARTMENT_CONFIGS[Department.CAD_CAM_2],
+  DEPARTMENT_CONFIGS[Department.CAD_CAM_3],
   DEPARTMENT_CONFIGS[Department.DENTURE],
 ];

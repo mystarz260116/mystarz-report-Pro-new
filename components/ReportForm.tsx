@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Department, DailyReport, DailyReportItem, ModelTimeEntry } from '../types';
-import { DEPARTMENT_CONFIGS, DEPARTMENTS_LIST, STAFF_GROUPS } from '../constants';
+import { DEPARTMENT_CONFIGS, FORM_DEPARTMENTS_LIST, STAFF_GROUPS } from '../constants';
 import { Save, Plus, CheckCircle2, Clock, Loader2, MessageSquare, AlertCircle } from 'lucide-react';
 import { saveReport } from '../services/reportService';
 
@@ -272,7 +272,12 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
   };
 
   const currentConfig = DEPARTMENT_CONFIGS[selectedDept];
-  const hasTabs = [Department.DENTURE, Department.COMPLETE_A, Department.COMPLETE_B, Department.COMPLETE_C].includes(selectedDept);
+  const hasTabs = [Department.DENTURE, Department.COMPLETE_A, Department.COMPLETE_B, Department.COMPLETE_C, Department.CAD_CAM_2].includes(selectedDept);
+
+  const getItemUnit = (item: string): string => {
+    if (selectedDept === Department.CAD_CAM_1 && (item === 'スキャン' || item === '3Dプリンター')) return 'ケース';
+    return '本';
+  };
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -286,7 +291,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
       <div className="p-6 space-y-8">
         {!editData && (
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2">
-            {DEPARTMENTS_LIST.map((dept) => {
+            {FORM_DEPARTMENTS_LIST.map((dept) => {
               const isSelected = selectedDept === dept.id;
               return (
                 <button
@@ -448,9 +453,13 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
                                     </div>
                                 );
                             }
-                            return (
+                            {
+                                const displayLabel = (hasTabs && item.startsWith(section.title + ' '))
+                                  ? item.slice(section.title.length + 1)
+                                  : item;
+                                return (
                                 <div key={item} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0 px-2">
-                                    <label className="text-sm text-gray-600">{item}</label>
+                                    <label className="text-sm text-gray-600">{displayLabel}</label>
                                     <div className="flex items-center gap-2">
                                         {(section.title === '3D/CAD' || selectedDept === Department.CAD_CAM || item === '3Dプリンター') && (
                                             <input
@@ -469,18 +478,19 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
                                               readOnly={item.includes('総数')}
                                               value={itemCounts[item] === undefined ? '' : itemCounts[item]}
                                               onChange={(e) => handleCountChange(item, e.target.value)}
-                                              className={`w-24 text-right border rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 
+                                              className={`w-24 text-right border rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500
                                                 ${itemCounts[item] > 0 ? 'border-blue-500 bg-blue-50 font-bold' : 'border-gray-300'}
                                                 ${item.includes('総数') ? 'bg-slate-100 font-black cursor-not-allowed' : ''}
                                               `}
                                           />
                                           {selectedDept !== Department.DENTURE && (
-                                            <span className="text-xs font-bold text-slate-400 w-4">本</span>
+                                            <span className="text-xs font-bold text-slate-400 w-6">{getItemUnit(item)}</span>
                                           )}
                                         </div>
                                     </div>
                                 </div>
-                            );
+                                );
+                            }
                         })}
                     </div>
                   </div>
