@@ -2,6 +2,14 @@
 import React, { useState, useMemo } from 'react';
 import { DailyReport, Department } from '../types';
 import { DEPARTMENTS_LIST, DEPARTMENT_CONFIGS, isHoliday } from '../constants';
+
+// 5月以降は旧部署名を集計表から非表示にする
+const LEGACY_DEPTS = new Set<Department>([
+  Department.PATTERN,
+  Department.INVEST_CUT,
+  Department.COMPLETE_B,
+  Department.COMPLETE_C,
+]);
 import { ChevronLeft, ChevronRight, Table, Filter, Sigma, Calendar as CalendarIcon, Info, Download } from 'lucide-react';
 
 interface StatisticsProps {
@@ -14,6 +22,16 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
   const [filterDept, setFilterDept] = useState<Department | 'ALL'>('ALL');
+
+  // 5月以降は旧部署名を非表示
+  const isNewEra = useMemo(
+    () => currentDate >= new Date(2026, 4, 1),
+    [currentDate]
+  );
+  const visibleDepts = useMemo(
+    () => DEPARTMENTS_LIST.filter(d => !(isNewEra && LEGACY_DEPTS.has(d.id))),
+    [isNewEra]
+  );
 
   const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
@@ -168,7 +186,7 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
 
     const csvRows: string[][] = [headers];
 
-    DEPARTMENTS_LIST.filter(d => filterDept === 'ALL' || filterDept === d.id).forEach(dept => {
+    visibleDepts.filter(d => filterDept === 'ALL' || filterDept === d.id).forEach(dept => {
       const data = tableData.get(dept.id);
       if (!data || data.items.size === 0) return;
 
@@ -251,7 +269,7 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
             className="bg-slate-100 border-none rounded-xl text-xs font-black px-4 py-2.5 focus:ring-2 focus:ring-blue-500"
           >
             <option value="ALL">全部署を表示</option>
-            {DEPARTMENTS_LIST.map(d => <option key={d.id} value={d.id}>{d.label}</option>)}
+            {visibleDepts.map(d => <option key={d.id} value={d.id}>{d.label}</option>)}
           </select>
           <div className="flex bg-slate-900 rounded-xl p-1 text-white shadow-lg">
             <button onClick={handlePrevMonth} className="p-2 hover:bg-white/10 rounded-lg transition-colors"><ChevronLeft className="w-4 h-4" /></button>
@@ -283,7 +301,7 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
               </tr>
             </thead>
             <tbody>
-              {DEPARTMENTS_LIST.filter(d => filterDept === 'ALL' || filterDept === d.id).map(dept => {
+              {visibleDepts.filter(d => filterDept === 'ALL' || filterDept === d.id).map(dept => {
                 const data = tableData.get(dept.id);
                 if (!data || data.items.size === 0) return null;
 

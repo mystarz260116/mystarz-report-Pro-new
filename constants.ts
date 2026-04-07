@@ -76,6 +76,34 @@ export const DEPARTMENT_CONFIGS: Record<Department, DeptConfig> = {
       { title: '工程処理数', items: ['スプルー植立', '埋没', 'キャスト', '割り出し', 'カット計量', 'パターン', 'その他'] },
     ],
   },
+  [Department.METAL_1]: {
+    id: Department.METAL_1,
+    label: 'メタル①',
+    color: '#10b981',
+    sections: [
+      { title: 'パターン', items: ['HB', 'HR', 'FCK', 'インレー', 'コア', 'その他', 'ラミネート', '3Dプリンター'] },
+      { title: '埋没', items: ['スプルー植立', '埋没', 'キャスト', '割り出し', 'カット計量', 'パターン', '埋没 その他'] },
+    ],
+  },
+  [Department.METAL_2]: {
+    id: Department.METAL_2,
+    label: 'メタル②',
+    color: '#6366f1',
+    sections: [
+      { title: '品目', items: ['クラウン', 'インレー', 'コア', '自費クラウン', '自費インレー', '自費コア'] },
+      { title: '調整・適合', items: ['調整・適合', '調整・コンタクト', '調整・バイト', 'ネジ付け・FMC/In', '研磨・FMC/In', '研磨・ブリッジ', '研磨・コア', 'ネジ外し・FMC/In', 'レーズ・ブリッジ'] },
+    ],
+  },
+  [Department.METAL_3]: {
+    id: Department.METAL_3,
+    label: 'メタル③',
+    color: '#ec4899',
+    sections: [
+      { title: '工程', items: ['メタル(適合～オペーク)', '築盛(築盛)', '形態(コンタクト～形態)', '研磨(シリコン～)', 'ホワイトWAX(築盛～形態)', 'トリミング(チェック～)'] },
+      { title: '製作品目', items: ['トリミング', 'ハードレジン', 'HJK', 'HB（インレー）', 'HB(アンレー)', 'HB(ジャケット)', 'HB(金属裏装)', 'ファイバーコア(自費)', 'ファイバーコア(保険)', 'CRインレー', 'CRアンレー', 'クラウン', 'インレー', 'ホワイトWAX'] },
+      { title: 'CAD製作品目', items: ['CAD/CAM(スキャン)', 'CAD/CAM(設計)', 'CAD/CAM(完成)'] },
+    ],
+  },
   [Department.COMPLETE_A]: {
     id: Department.COMPLETE_A,
     label: '完成A',
@@ -167,29 +195,32 @@ export const DEPARTMENT_CONFIGS: Record<Department, DeptConfig> = {
   },
 };
 
-// 統計・集計用（旧CAD/CAMも含めて過去データとCOMPLETE_A/Bのルーティングを維持）
+// 統計・集計用（旧名は後方互換のため残存、5月以降はStatistics側でフィルタリング）
 export const DEPARTMENTS_LIST = [
   DEPARTMENT_CONFIGS[Department.OSAKA_MODEL],
-  DEPARTMENT_CONFIGS[Department.PATTERN],
-  DEPARTMENT_CONFIGS[Department.INVEST_CUT],
+  DEPARTMENT_CONFIGS[Department.METAL_1],
+  DEPARTMENT_CONFIGS[Department.METAL_2],
+  DEPARTMENT_CONFIGS[Department.METAL_3],
   DEPARTMENT_CONFIGS[Department.COMPLETE_A],
-  DEPARTMENT_CONFIGS[Department.COMPLETE_B],
-  DEPARTMENT_CONFIGS[Department.COMPLETE_C],
   DEPARTMENT_CONFIGS[Department.CAD_CAM],
   DEPARTMENT_CONFIGS[Department.CAD_CAM_1],
   DEPARTMENT_CONFIGS[Department.CAD_CAM_2],
   DEPARTMENT_CONFIGS[Department.CAD_CAM_3],
   DEPARTMENT_CONFIGS[Department.DENTURE],
-];
-
-// フォームボタン用（CAD/CAM①②③を表示、旧CAD/CAMは非表示）
-export const FORM_DEPARTMENTS_LIST = [
-  DEPARTMENT_CONFIGS[Department.OSAKA_MODEL],
+  // 旧部署: 過去データ表示用（4月中は混在表示、5月以降はStatisticsで非表示）
   DEPARTMENT_CONFIGS[Department.PATTERN],
   DEPARTMENT_CONFIGS[Department.INVEST_CUT],
-  DEPARTMENT_CONFIGS[Department.COMPLETE_A],
   DEPARTMENT_CONFIGS[Department.COMPLETE_B],
   DEPARTMENT_CONFIGS[Department.COMPLETE_C],
+];
+
+// フォームボタン用（新部署構成: 大阪模型→メタル①②③→完成A→CAD系→デンチャー）
+export const FORM_DEPARTMENTS_LIST = [
+  DEPARTMENT_CONFIGS[Department.OSAKA_MODEL],
+  DEPARTMENT_CONFIGS[Department.METAL_1],
+  DEPARTMENT_CONFIGS[Department.METAL_2],
+  DEPARTMENT_CONFIGS[Department.METAL_3],
+  DEPARTMENT_CONFIGS[Department.COMPLETE_A],
   DEPARTMENT_CONFIGS[Department.CAD_CAM_1],
   DEPARTMENT_CONFIGS[Department.CAD_CAM_2],
   DEPARTMENT_CONFIGS[Department.CAD_CAM_3],

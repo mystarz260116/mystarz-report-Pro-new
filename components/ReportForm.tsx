@@ -61,6 +61,9 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
         // 特殊なマッピング
         if (currentDeptLabel === '大阪模型' && groupName === '模型') return 95;
         if (currentDeptLabel === '埋没・カット計量' && groupName === '埋没') return 95;
+        if (currentDeptLabel === 'メタル①' && (groupName === 'パターン' || groupName === '埋没')) return 95;
+        if (currentDeptLabel === 'メタル②' && groupName === '完成C') return 95;
+        if (currentDeptLabel === 'メタル③' && groupName === '完成B') return 95;
         return 0;
       };
       return getScore(b.groupName) - getScore(a.groupName);
@@ -272,7 +275,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
   };
 
   const currentConfig = DEPARTMENT_CONFIGS[selectedDept];
-  const hasTabs = [Department.DENTURE, Department.COMPLETE_A, Department.COMPLETE_B, Department.COMPLETE_C].includes(selectedDept);
+  const hasTabs = [Department.DENTURE, Department.COMPLETE_A, Department.COMPLETE_B, Department.COMPLETE_C, Department.METAL_1, Department.METAL_2, Department.METAL_3].includes(selectedDept);
   const showSectionTitles = selectedDept === Department.CAD_CAM_2;
 
   const getItemUnit = (item: string): string => {
