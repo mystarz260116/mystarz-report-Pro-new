@@ -110,7 +110,8 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
 
       if (y === currentDate.getFullYear() && (m - 1) === currentDate.getMonth()) {
         r.items.forEach(item => {
-          let targetDept = r.department;
+          // 旧部署名マイグレーション（enum値変更による過去データの救済）
+          let targetDept = (r.department as string) === '完成A' ? Department.COMPLETE_A : r.department;
           const itemName = item.itemName;
           
           if (itemName === 'CAD/CAM(設計)' || itemName === 'CAD/CAM(完成)') {
