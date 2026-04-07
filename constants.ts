@@ -27,14 +27,15 @@ export const isHoliday = (date: Date): boolean => {
 };
 
 export const STAFF_GROUPS = [
-  { groupName: '模型', items: ['西口', '山村', '田村', '阿波', '谷村', '坂田', '北中'] },
-  { groupName: 'パターン', items: ['清水', '杉野', '三国', '小野', '田村', '可畑'] },
-  { groupName: '埋没', items: ['小林', '山村', '可畑'] },
-  { groupName: '完成A', items: ['加藤', '武知', '酒井', '小谷', '髙木', '小畠', '中村', '中西(京)', '白山'] },
-  { groupName: '完成B', items: ['玉城', '森田'] },
-  { groupName: '完成C', items: ['島村', '天正'] },
-  { groupName: 'CAD/CAM', items: ['木村', '荒木', '日根', '新村', '久原', '吉村', '村井', '成田', '徳永', '林原', '黒田', '三宅', '松田(尚)'] },
-  { groupName: 'デンチャー', items: [ '松田', '松尾', '南出', '森山','好村', '西村', '木澤', '長原', '浦本'] },
+  { groupName: '模型', items: ['西口', '阿波', '佐々木', '寺本', '町田', '山本'] },
+  { groupName: 'メタル①', items: ['小野', '清水', '三国', '杉野', '小林', '山村', '可畑'] },
+  { groupName: 'メタル②', items: ['天正', '島村'] },
+  { groupName: 'メタル③', items: ['上野', '玉城', '森田', '可畑', '江藤'] },
+  { groupName: '完成A', items: ['武知', '小畠', '小谷', '酒井', '高木', '中村', '中西（京）', '白山', '加藤'] },
+  { groupName: 'CAD/CAM①', items: ['松田（尚）', '吉村', '徳永', '黒田', '中西（涼）'] },
+  { groupName: 'CAD/CAM②', items: ['新村', '久原', '日根', '荒木', '森田', '林原'] },
+  { groupName: 'CAD/CAM③', items: ['成田', '荒木', '木村', '村井', '松田（晃）', '徳永', '森山', '松尾'] },
+  { groupName: 'デンチャー', items: ['松尾', '松田（晃）', '森山', '南出', '西村', '林原', '松田（尚）', '好村', '浦本', '木澤', '長原', '山口'] },
 ];
 
 export const DEPARTMENT_CONFIGS: Record<Department, DeptConfig> = {

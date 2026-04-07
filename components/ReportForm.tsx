@@ -60,10 +60,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
         if (groupName.includes(currentDeptLabel)) return 90;
         // 特殊なマッピング
         if (currentDeptLabel === '大阪模型' && groupName === '模型') return 95;
-        if (currentDeptLabel === '埋没・カット計量' && groupName === '埋没') return 95;
-        if (currentDeptLabel === 'メタル①' && (groupName === 'パターン' || groupName === '埋没')) return 95;
-        if (currentDeptLabel === 'メタル②' && groupName === '完成C') return 95;
-        if (currentDeptLabel === 'メタル③' && groupName === '完成B') return 95;
+        if (currentDeptLabel.startsWith('CAD/CAM') && groupName.startsWith('CAD/CAM')) return 85;
         return 0;
       };
       return getScore(b.groupName) - getScore(a.groupName);
