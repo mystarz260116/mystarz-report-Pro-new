@@ -6,7 +6,7 @@ export enum Department {
   METAL_1 = 'メタル①',
   METAL_2 = 'メタル②',
   METAL_3 = 'メタル③',
-  COMPLETE_A = '完成A',
+  COMPLETE_A = '自費',
   COMPLETE_B = '完成B',
   COMPLETE_C = '完成C',
   CAD_CAM = 'CAD/CAM',

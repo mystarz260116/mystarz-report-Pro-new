@@ -31,7 +31,7 @@ export const STAFF_GROUPS = [
   { groupName: 'メタル①', items: ['小野', '清水', '三国', '杉野', '小林', '山村', '可畑'] },
   { groupName: 'メタル②', items: ['天正', '島村'] },
   { groupName: 'メタル③', items: ['上野', '玉城', '森田', '可畑', '江藤'] },
-  { groupName: '完成A', items: ['武知', '小畠', '小谷', '酒井', '高木', '中村', '中西（京）', '白山', '加藤'] },
+  { groupName: '自費', items: ['武知', '小畠', '小谷', '酒井', '高木', '中村', '中西（京）', '白山', '加藤'] },
   { groupName: 'CAD/CAM①', items: ['松田（尚）', '吉村', '徳永', '黒田', '中西（涼）'] },
   { groupName: 'CAD/CAM②', items: ['新村', '久原', '日根', '荒木', '森田', '林原'] },
   { groupName: 'CAD/CAM③', items: ['成田', '荒木', '木村', '村井', '松田（晃）', '徳永', '森山', '松尾'] },
@@ -107,7 +107,7 @@ export const DEPARTMENT_CONFIGS: Record<Department, DeptConfig> = {
   },
   [Department.COMPLETE_A]: {
     id: Department.COMPLETE_A,
-    label: '完成A',
+    label: '自費',
     color: '#8b5cf6',
     sections: [
       { title: 'e.max', items: ['マウント(e.max)', 'トリミング(e.max)', 'パターン Cr(e.max)', 'パターン インレー(e.max)', 'パターン ラミネート(e.max)', '植立：埋没・プレス(e.max)','適合・調整(e.max)', 'ステイン・完成 Cr(e.max)', 'ステイン・完成 インレー(e.max)', 'ステイン・完成 ラミネート(e.max)'] },
