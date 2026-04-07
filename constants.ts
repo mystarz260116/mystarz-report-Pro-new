@@ -113,7 +113,7 @@ export const DEPARTMENT_CONFIGS: Record<Department, DeptConfig> = {
       { title: 'e.max', items: ['マウント(e.max)', 'トリミング(e.max)', 'パターン Cr(e.max)', 'パターン インレー(e.max)', 'パターン ラミネート(e.max)', '植立：埋没・プレス(e.max)','適合・調整(e.max)', 'ステイン・完成 Cr(e.max)', 'ステイン・完成 インレー(e.max)', 'ステイン・完成 ラミネート(e.max)'] },
       { title: 'MB', items: ['マウント(MB)', 'トリミング(MB)', 'パターン(フルカントゥア)', 'パターン(キャップ)', '植立・埋没・キャスト(MB)', 'メタル調整(MB)', '前ロウ(ヶ所)', '築盛(MB)', '形態修正・完成(MB)'] },
       { title: 'Zirconia', items: ['マウント(Zir)', 'トリミング(Zir)', '設計・Cr(Zir)', '設計・In(Zir)', '適合・調整(Zir)', 'フルジルコニア ステイン・完成(Cr)', 'フルジルコニア ステイン・完成(インレー)', 'レイヤリング(築盛)(Zir)', 'レイヤリング(形成修正・完成)(Zir)'] },
-      { title: 'CAD/CAM', items: ['CAD/CAM(スキャン)', 'CAD/CAM(設計)', 'CAD/CAM(完成)'] }
+      { title: 'インプラント', items: ['模型作り', 'マウント', 'アバットメント設計', 'アバットメント調整', 'セメンテーション（スクリュー）', 'トランスファージグ'] },
     ],
   },
   [Department.COMPLETE_B]: {

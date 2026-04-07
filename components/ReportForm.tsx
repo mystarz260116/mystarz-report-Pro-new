@@ -277,6 +277,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
 
   const getItemUnit = (item: string): string => {
     if (selectedDept === Department.CAD_CAM_1 && (item === 'スキャン' || item === '3Dプリンター')) return 'ケース';
+    if (['模型作り', 'マウント', 'トランスファージグ'].includes(item)) return 'ケース';
     return '本';
   };
 
