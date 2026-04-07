@@ -82,7 +82,7 @@ export const DEPARTMENT_CONFIGS: Record<Department, DeptConfig> = {
     label: 'メタル①',
     color: '#10b981',
     sections: [
-      { title: 'パターン', items: ['HB', 'HR', 'FCK', 'インレー', 'コア', 'その他', 'ラミネート', '3Dプリンター'] },
+      { title: 'WAX', items: ['HR', 'FMC', 'インレー', 'コア', 'その他'] },
       { title: '埋没', items: ['スプルー植立', '埋没', 'キャスト', '割り出し', 'カット計量', 'パターン', '埋没 その他'] },
     ],
   },
