@@ -188,6 +188,55 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
     setIsSaving(true);
 
     try {
+      // CAD/CAM①②③ 結合フォームの場合は3件に分割して保存
+      if (selectedDept === Department.CAD_CAM_ALL) {
+        const subDepts: { dept: Department; itemSet: Set<string> }[] = [
+          { dept: Department.CAD_CAM_1, itemSet: new Set(['トリミング', 'スキャン', 'CAM', '3Dプリンター']) },
+          { dept: Department.CAD_CAM_2, itemSet: new Set(['模型あり 前歯', '模型あり クラウン', '模型あり インレー', '模型なし 前歯', '模型なし クラウン', '模型なし インレー', 'AI設計 前歯', 'AI設計 クラウン', 'AI設計 インレー']) },
+          { dept: Department.CAD_CAM_3, itemSet: new Set(['模型あり', '模型なし']) },
+        ];
+        const now = Date.now();
+        const reportsToSave = subDepts
+          .map(({ dept, itemSet }, i) => {
+            const deptItems: DailyReportItem[] = (Object.entries(itemCounts) as [string, number][])
+              .filter(([name, count]) => count > 0 && itemSet.has(name))
+              .map(([name, count], idx) => ({
+                itemId: `s-${i}-${idx}-${now}`,
+                itemName: name,
+                count,
+                timeMinutes: itemTimes[name] || 0,
+              }));
+            if (deptItems.length === 0) return null;
+            return {
+              id: `${now}-${i}`,
+              date, department: dept, staffName,
+              startTime: '', endTime: '',
+              workStartTime, workEndTime,
+              totalBreakTimeMinutes: breakTime,
+              items: deptItems,
+              remarks, issues, createdAt: now,
+            } as DailyReport;
+          })
+          .filter((r): r is DailyReport => r !== null);
+
+        if (reportsToSave.length === 0) {
+          alert('⚠️ 入力されたデータがありません');
+          setIsSaving(false);
+          return;
+        }
+
+        const results = await Promise.all(reportsToSave.map(r => saveReport(r)));
+        if (results.every(r => r)) {
+          alert(`✅ 日報が保存されました（${reportsToSave.map(r => r.department).join('・')}）`);
+          onSuccess();
+          window.location.reload();
+        } else {
+          alert('⚠️ 一部の保存に失敗しました');
+          setIsSaving(false);
+        }
+        return;
+      }
+
       let reportItems: DailyReportItem[] = [];
       const currentConfig = DEPARTMENT_CONFIGS[selectedDept];
       const allAllowedItems = new Set(currentConfig.sections.flatMap(s => s.items));
@@ -272,11 +321,11 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
   };
 
   const currentConfig = DEPARTMENT_CONFIGS[selectedDept];
-  const hasTabs = [Department.DENTURE, Department.COMPLETE_A, Department.COMPLETE_B, Department.COMPLETE_C, Department.METAL_1, Department.METAL_2, Department.METAL_3].includes(selectedDept);
+  const hasTabs = [Department.DENTURE, Department.COMPLETE_A, Department.COMPLETE_B, Department.COMPLETE_C, Department.METAL_1, Department.METAL_2, Department.METAL_3, Department.CAD_CAM_ALL].includes(selectedDept);
   const showSectionTitles = selectedDept === Department.CAD_CAM_2;
 
   const getItemUnit = (item: string): string => {
-    if (selectedDept === Department.CAD_CAM_1 && (item === 'スキャン' || item === '3Dプリンター')) return 'ケース';
+    if ((selectedDept === Department.CAD_CAM_1 || selectedDept === Department.CAD_CAM_ALL) && (item === 'スキャン' || item === '3Dプリンター')) return 'ケース';
     if (['模型作り', 'マウント', 'トランスファージグ'].includes(item)) return 'ケース';
     return '本';
   };
@@ -366,6 +415,43 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
                 const isDentureDetailedSection = selectedDept === Department.DENTURE && 
                                                  section.title !== '基本' && 
                                                  section.title !== '3D/CAD';
+
+                // innerSections がある場合（CAD②タブ内の模型あり/模型なし/AI設計）
+                if (section.innerSections) {
+                  return (
+                    <div key={secIdx} className="space-y-4">
+                      {section.innerSections.map((inner) => (
+                        <div key={inner.title} className="space-y-2">
+                          <div className="flex items-center gap-2 pt-1">
+                            <span className="text-xs font-black text-slate-500 uppercase tracking-wider px-2 py-1 bg-slate-100 rounded-md">{inner.title}</span>
+                            <div className="flex-1 h-px bg-slate-200" />
+                          </div>
+                          <div className="grid grid-cols-1 gap-2">
+                            {inner.items.map((item) => {
+                              const displayLabel = item.startsWith(inner.title + ' ') ? item.slice(inner.title.length + 1) : item;
+                              return (
+                                <div key={item} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0 px-2">
+                                  <label className="text-sm text-gray-600">{displayLabel}</label>
+                                  <div className="flex items-center gap-1">
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      placeholder="0"
+                                      value={itemCounts[item] === undefined ? '' : itemCounts[item]}
+                                      onChange={(e) => handleCountChange(item, e.target.value)}
+                                      className={`w-24 text-right border rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 ${itemCounts[item] > 0 ? 'border-blue-500 bg-blue-50 font-bold' : 'border-gray-300'}`}
+                                    />
+                                    <span className="text-xs font-bold text-slate-400 w-6">本</span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                }
 
                 return (
                   <div key={secIdx} className="space-y-3">

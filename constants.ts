@@ -177,6 +177,34 @@ export const DEPARTMENT_CONFIGS: Record<Department, DeptConfig> = {
       { afterItem: '模型なし', name: '合計', sumItems: ['模型あり', '模型なし'] },
     ],
   },
+  [Department.CAD_CAM_ALL]: {
+    id: Department.CAD_CAM_ALL,
+    label: 'CAD/CAM①②③',
+    color: '#22d3ee',
+    sections: [
+      {
+        title: '①（スキャン/トリミング）',
+        items: ['トリミング', 'スキャン', 'CAM', '3Dプリンター'],
+      },
+      {
+        title: '②（設計）',
+        items: [
+          '模型あり 前歯', '模型あり クラウン', '模型あり インレー',
+          '模型なし 前歯', '模型なし クラウン', '模型なし インレー',
+          'AI設計 前歯', 'AI設計 クラウン', 'AI設計 インレー',
+        ],
+        innerSections: [
+          { title: '模型あり', items: ['模型あり 前歯', '模型あり クラウン', '模型あり インレー'] },
+          { title: '模型なし', items: ['模型なし 前歯', '模型なし クラウン', '模型なし インレー'] },
+          { title: 'AI設計', items: ['AI設計 前歯', 'AI設計 クラウン', 'AI設計 インレー'] },
+        ],
+      },
+      {
+        title: '③（完成）',
+        items: ['模型あり', '模型なし'],
+      },
+    ],
+  },
   [Department.DENTURE]: {
     id: Department.DENTURE,
     label: 'デンチャー',
@@ -221,8 +249,6 @@ export const FORM_DEPARTMENTS_LIST = [
   DEPARTMENT_CONFIGS[Department.METAL_2],
   DEPARTMENT_CONFIGS[Department.METAL_3],
   DEPARTMENT_CONFIGS[Department.COMPLETE_A],
-  DEPARTMENT_CONFIGS[Department.CAD_CAM_1],
-  DEPARTMENT_CONFIGS[Department.CAD_CAM_2],
-  DEPARTMENT_CONFIGS[Department.CAD_CAM_3],
+  DEPARTMENT_CONFIGS[Department.CAD_CAM_ALL],
   DEPARTMENT_CONFIGS[Department.DENTURE],
 ];

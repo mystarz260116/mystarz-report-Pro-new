@@ -13,6 +13,7 @@ export enum Department {
   CAD_CAM_1 = 'CAD/CAM①',
   CAD_CAM_2 = 'CAD/CAM②（設計）',
   CAD_CAM_3 = 'CAD/CAM③（完成）',
+  CAD_CAM_ALL = 'CAD/CAM①②③',
   DENTURE = 'デンチャー',
 }
 
@@ -66,6 +67,7 @@ export interface DeptConfig {
   sections: {
     title: string;
     items: string[];
+    innerSections?: { title: string; items: string[] }[];
   }[];
   computedRows?: { afterItem: string; name: string; sumItems: string[] }[];
 }
