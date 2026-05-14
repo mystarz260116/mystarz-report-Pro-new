@@ -83,9 +83,16 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
       const dDetails: Record<string, any> = {};
       const others: string[] = [];
 
+      // デンチャーの「基本」と「3D/CAD」セクションはシンプル入力（itemCounts管理）
+      const dentureSimpleItems = new Set(
+        DEPARTMENT_CONFIGS[Department.DENTURE].sections
+          .filter(s => s.title === '基本' || s.title === '3D/CAD')
+          .flatMap(s => s.items)
+      );
+
       editData.items.forEach(item => {
         let itemName = item.itemName;
-        
+
         // 「その他 (カテゴリー)」形式の復元
         if (editData.department === Department.DENTURE && itemName.startsWith('その他 (')) {
             const match = itemName.match(/その他 \((.+)\)/);
@@ -107,7 +114,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
             }
         }
 
-        if (editData.department === Department.DENTURE && item.countInsured !== undefined) {
+        if (editData.department === Department.DENTURE && !dentureSimpleItems.has(itemName)) {
             dDetails[itemName] = {
                 insured: item.countInsured || 0,
                 insuredComp: item.countInsuredCompleted || 0,

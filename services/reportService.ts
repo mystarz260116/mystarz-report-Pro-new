@@ -32,12 +32,16 @@ export const standardizeDate = (d: any): string => {
   return datePart;
 };
 
+const normalizeStaffName = (name: string): string =>
+  name.replace(/\(/g, '（').replace(/\)/g, '）');
+
 export const getReports = (): DailyReport[] => {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
     if (!data) return [];
     const parsed = JSON.parse(data);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((r: DailyReport) => ({ ...r, staffName: normalizeStaffName(r.staffName || '') }));
   } catch (e) {
     return [];
   }
@@ -153,7 +157,7 @@ export const loadReportsFromGoogleSheets = async (): Promise<void> => {
             id, 
             date: standardizeDate(row['日付']), 
             department: row['部署'] as Department, 
-            staffName: String(row['担当者'] || ''),
+            staffName: normalizeStaffName(String(row['担当者'] || '')),
             startTime: '', 
             endTime: '', 
             workStartTime: String(row['作業開始時刻'] || ''), 
