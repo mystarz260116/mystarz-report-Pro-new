@@ -54,9 +54,13 @@ export const saveReport = async (report: DailyReport): Promise<boolean> => {
     const filtered = existing.filter(r => r.id !== report.id);
     const updated = [report, ...filtered];
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    
+
+    // GAS同期はバックグラウンドで実行。失敗してもローカル保存は成功扱いとする
     console.log('Starting Google Sheets sync to:', GOOGLE_SCRIPT_URL);
-    return await saveReportToGoogleSheets(report);
+    saveReportToGoogleSheets(report).then(synced => {
+      if (!synced) console.warn('GAS同期に失敗しました（ローカルには保存済）:', report.id);
+    });
+    return true;
   } catch (error) {
     console.error('保存処理エラー:', error);
     return false;
@@ -150,31 +154,31 @@ export const loadReportsFromGoogleSheets = async (): Promise<void> => {
         const id = String(row['ID'] || '').trim();
         const ts = String(row['保存日時'] || '');
         if (!id || ts !== latestTimestampMap.get(id)) return;
-        
+
         let r = reportsMap.get(id);
         if (!r) {
           r = {
-            id, 
-            date: standardizeDate(row['日付']), 
-            department: row['部署'] as Department, 
+            id,
+            date: standardizeDate(row['日付']),
+            department: row['部署'] as Department,
             staffName: normalizeStaffName(String(row['担当者'] || '')),
-            startTime: '', 
-            endTime: '', 
-            workStartTime: String(row['作業開始時刻'] || ''), 
+            startTime: '',
+            endTime: '',
+            workStartTime: String(row['作業開始時刻'] || ''),
             workEndTime: String(row['作業終了時刻'] || ''),
-            totalBreakTimeMinutes: Number(row['休憩(分)']) || 0, 
-            items: [], 
-            remarks: String(row['備考'] || ''), 
-            issues: String(row['問題点'] || ''), 
+            totalBreakTimeMinutes: Number(row['休憩(分)']) || 0,
+            items: [],
+            remarks: String(row['備考'] || ''),
+            issues: String(row['問題点'] || ''),
             createdAt: new Date(ts).getTime() || Date.now()
           };
           reportsMap.set(id, r);
         }
 
         if (row['項目名']) {
-            r.items.push({ 
-                itemId: Math.random().toString(), 
-                itemName: String(row['項目名']), 
+            r.items.push({
+                itemId: Math.random().toString(),
+                itemName: String(row['項目名']),
                 count: Number(row['数量(合計)']) || 0,
                 countInsured: Number(row['保険数']) || 0,
                 countInsuredCompleted: Number(row['保険完成']) || 0,
@@ -184,7 +188,13 @@ export const loadReportsFromGoogleSheets = async (): Promise<void> => {
             });
         }
       });
-      const sorted = Array.from(reportsMap.values()).sort((a, b) => b.date.localeCompare(a.date));
+
+      // GASデータとローカルデータをマージ（ローカルにしかないデータ＝未同期分を保護）
+      const gasIds = new Set(reportsMap.keys());
+      const localReports = getReports();
+      const localOnlyReports = localReports.filter(r => !gasIds.has(r.id));
+      const merged = [...Array.from(reportsMap.values()), ...localOnlyReports];
+      const sorted = merged.sort((a, b) => b.date.localeCompare(a.date));
       localStorage.setItem(STORAGE_KEY, JSON.stringify(sorted));
     }
   } catch (e) { console.error('データ読み込み失敗:', e); }
