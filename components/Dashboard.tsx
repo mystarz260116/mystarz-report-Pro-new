@@ -3,8 +3,43 @@ import React, { useMemo } from 'react';
 import { DailyReport, Department } from '../types';
 import { CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, XAxis, YAxis } from 'recharts';
 import { DEPARTMENT_CONFIGS } from '../constants';
-import { TrendingUp, Users, Calendar, Activity } from 'lucide-react';
+import { TrendingUp, Users, Calendar, Activity, BarChart2 } from 'lucide-react';
 import { standardizeDate } from '../services/reportService';
+
+const SPECIAL_ITEM_GROUPS = [
+  {
+    group: '自費',
+    color: '#8b5cf6',
+    dept: Department.COMPLETE_A,
+    items: [
+      { label: 'フルジルコニア ステイン・完成(Cr)',      keys: ['フルジルコニア ステイン・完成(Cr)'] },
+      { label: 'フルジルコニア ステイン・完成(インレー)', keys: ['フルジルコニア ステイン・完成(インレー)'] },
+      { label: 'ステイン・完成 Cr(e.max)',              keys: ['ステイン・完成 Cr(e.max)'] },
+      { label: 'ステイン・完成 インレー(e.max)',         keys: ['ステイン・完成 インレー(e.max)'] },
+      { label: 'ステイン・完成 ラミネート(e.max)',       keys: ['ステイン・完成 ラミネート(e.max)'] },
+    ],
+  },
+  {
+    group: 'メタル③',
+    color: '#ec4899',
+    dept: Department.METAL_3,
+    items: [
+      { label: 'HB金属裏装',   keys: ['HB金属裏装', 'HB(金属裏装)'] },
+      { label: 'HBジャケット', keys: ['HBジャケット', 'HJK'] },
+      { label: 'HBインレー',   keys: ['HBインレー', 'HB（インレー）'] },
+      { label: 'HR',           keys: ['HR'] },
+      { label: 'ファイバーコア', keys: ['ファイバーコア', 'ファイバーコア(保険)', 'ファイバーコア(自費)'] },
+    ],
+  },
+  {
+    group: 'メタル①',
+    color: '#10b981',
+    dept: Department.METAL_1,
+    items: [
+      { label: 'HR', keys: ['HR'] },
+    ],
+  },
+];
 
 interface DashboardProps { label?: string; reports: DailyReport[] }
 
@@ -89,6 +124,39 @@ const Dashboard: React.FC<DashboardProps> = ({ reports }) => {
     }));
   }, [finalReports]);
 
+  const monthColumns = useMemo(() => {
+    const now = new Date();
+    return [2, 1, 0].map(offset => {
+      const d = new Date(now.getFullYear(), now.getMonth() - offset, 1);
+      return {
+        year: d.getFullYear(),
+        month: d.getMonth(),
+        label: `${d.getMonth() + 1}月${offset === 0 ? '（今月）' : ''}`,
+      };
+    });
+  }, []);
+
+  const specialItemTotals = useMemo(() => {
+    return SPECIAL_ITEM_GROUPS.map(group => ({
+      ...group,
+      items: group.items.map(item => {
+        const monthTotals = monthColumns.map(({ year, month }) => {
+          const reports = finalReports.filter(r => {
+            if (!r.date || r.department !== group.dept) return false;
+            const parts = standardizeDate(r.date).split('-');
+            return Number(parts[0]) === year && Number(parts[1]) - 1 === month;
+          });
+          return reports.reduce((sum, r) =>
+            sum + r.items
+              .filter(i => item.keys.includes(i.itemName))
+              .reduce((s, i) => s + i.count, 0)
+          , 0);
+        });
+        return { ...item, monthTotals };
+      }),
+    }));
+  }, [finalReports, monthColumns]);
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       
@@ -171,6 +239,50 @@ const Dashboard: React.FC<DashboardProps> = ({ reports }) => {
           </div>
         </div>
       </div>
+      <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-200">
+        <h3 className="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
+          <BarChart2 className="w-5 h-5 text-blue-500" /> 特定品目 月別比較（直近3ヶ月）
+        </h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b-2 border-slate-200">
+                <th className="text-left py-2 pr-4 font-black text-slate-500 w-48">品目</th>
+                {monthColumns.map(col => (
+                  <th key={col.label} className={`text-center py-2 px-4 font-black ${col.label.includes('今月') ? 'text-blue-600' : 'text-slate-400'}`}>
+                    {col.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {specialItemTotals.map(group => (
+                <React.Fragment key={group.group}>
+                  <tr>
+                    <td colSpan={4} className="pt-5 pb-1">
+                      <span className="text-xs font-black tracking-widest px-2 py-0.5 rounded-full" style={{ color: group.color, backgroundColor: group.color + '18' }}>
+                        {group.group}
+                      </span>
+                    </td>
+                  </tr>
+                  {group.items.map(item => (
+                    <tr key={item.label} className="border-b border-slate-100 hover:bg-slate-50">
+                      <td className="py-2 pr-4 text-slate-600">{item.label}</td>
+                      {item.monthTotals.map((total, i) => (
+                        <td key={i} className={`text-center py-2 px-4 font-black ${i === 2 ? 'text-blue-700' : 'text-slate-700'}`}>
+                          {total > 0 ? total.toLocaleString() : <span className="text-slate-200">—</span>}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-xs text-slate-400 mt-4">※ 直近3ヶ月分のデータを表示。それ以前は「最新データを取得」では表示されません。</p>
+      </div>
+
     </div>
   );
 };
