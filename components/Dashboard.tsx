@@ -3,7 +3,7 @@ import React, { useMemo } from 'react';
 import { DailyReport, Department } from '../types';
 import { CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, XAxis, YAxis } from 'recharts';
 import { DEPARTMENT_CONFIGS } from '../constants';
-import { TrendingUp, Users, Calendar, Activity, BarChart2 } from 'lucide-react';
+import { TrendingUp, Users, Calendar, Activity, BarChart2, Download } from 'lucide-react';
 import { standardizeDate } from '../services/reportService';
 
 const SPECIAL_ITEM_GROUPS = [
@@ -152,6 +152,24 @@ const Dashboard: React.FC<DashboardProps> = ({ reports }) => {
     }));
   }, [finalReports, monthColumns]);
 
+  const handleDownloadSpecialCSV = () => {
+    const headers = ['部署', '品目', ...monthColumns.map(c => c.label)];
+    const rows: string[][] = [headers];
+    specialItemTotals.forEach(group => {
+      group.items.forEach(item => {
+        rows.push([group.group, item.label, ...item.monthTotals.map(String)]);
+      });
+    });
+    const csv = '﻿' + rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `特定品目月別比較_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       
@@ -235,16 +253,24 @@ const Dashboard: React.FC<DashboardProps> = ({ reports }) => {
         </div>
       </div>
       <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-200">
-        <h3 className="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
-          <BarChart2 className="w-5 h-5 text-blue-500" /> 特定品目 月別比較（直近3ヶ月）
-        </h3>
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
+            <BarChart2 className="w-5 h-5 text-blue-500" /> 特定品目 月別比較（直近3ヶ月）
+          </h3>
+          <button
+            onClick={handleDownloadSpecialCSV}
+            className="flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-blue-600 bg-slate-100 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors border border-slate-200 hover:border-blue-200"
+          >
+            <Download className="w-3.5 h-3.5" /> CSV
+          </button>
+        </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+          <table className="w-full text-xs border-collapse">
             <thead>
-              <tr className="border-b-2 border-slate-200">
-                <th className="text-left py-2 pr-4 font-black text-slate-500 w-48">品目</th>
-                {monthColumns.map(col => (
-                  <th key={col.label} className={`text-center py-2 px-4 font-black ${col.label.includes('今月') ? 'text-blue-600' : 'text-slate-400'}`}>
+              <tr className="bg-slate-50">
+                <th className="text-left py-3 px-4 font-black text-slate-500 border border-slate-200 w-52">品目</th>
+                {monthColumns.map((col, i) => (
+                  <th key={col.label} className={`text-center py-3 px-6 font-black border border-slate-200 ${i === 2 ? 'bg-blue-50 text-blue-600' : 'text-slate-500'}`}>
                     {col.label}
                   </th>
                 ))}
@@ -253,19 +279,19 @@ const Dashboard: React.FC<DashboardProps> = ({ reports }) => {
             <tbody>
               {specialItemTotals.map(group => (
                 <React.Fragment key={group.group}>
-                  <tr>
-                    <td colSpan={4} className="pt-5 pb-1">
-                      <span className="text-xs font-black tracking-widest px-2 py-0.5 rounded-full" style={{ color: group.color, backgroundColor: group.color + '18' }}>
-                        {group.group}
+                  <tr style={{ backgroundColor: group.color + '12' }}>
+                    <td colSpan={4} className="py-2 px-4 border border-slate-200">
+                      <span className="font-black tracking-widest text-[11px]" style={{ color: group.color }}>
+                        ▌ {group.group}
                       </span>
                     </td>
                   </tr>
                   {group.items.map(item => (
-                    <tr key={item.label} className="border-b border-slate-100 hover:bg-slate-50">
-                      <td className="py-2 pr-4 text-slate-600">{item.label}</td>
+                    <tr key={item.label} className="hover:bg-slate-50 transition-colors">
+                      <td className="py-2.5 px-4 text-slate-600 border border-slate-200">{item.label}</td>
                       {item.monthTotals.map((total, i) => (
-                        <td key={i} className={`text-center py-2 px-4 font-black ${i === 2 ? 'text-blue-700' : 'text-slate-700'}`}>
-                          {total > 0 ? total.toLocaleString() : <span className="text-slate-200">—</span>}
+                        <td key={i} className={`text-center py-2.5 px-6 border border-slate-200 font-black ${i === 2 ? 'text-blue-700 bg-blue-50/40' : 'text-slate-700'}`}>
+                          {total > 0 ? total.toLocaleString() : <span className="text-slate-300 font-normal">—</span>}
                         </td>
                       ))}
                     </tr>
