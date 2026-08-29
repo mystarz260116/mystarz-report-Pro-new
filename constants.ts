@@ -98,8 +98,8 @@ export const DEPARTMENT_CONFIGS: Record<Department, DeptConfig> = {
     label: 'メタル③',
     color: '#ec4899',
     sections: [
-      { title: '製作品目', items: ['HR', 'HJC', 'CRインレー', 'FMC', 'インレー', 'HB金属裏装', 'HBジャケット', 'HBインレー', 'ファイバーコア', 'ホワイトWAX'], hideFromStats: true },
-      { title: '工程', items: ['メタル(適合～オペーク)', '築盛(築盛)', '形態(コンタクト～形態)'] },
+      { title: '製作品目', items: ['HR', 'HJC', 'CRインレー', 'FMC', 'インレー', 'HB金属裏装', 'HBジャケット', 'HBインレー', 'ファイバーコア', 'ホワイトWAX'] },
+      { title: '工程', items: ['メタル(適合～オペーク)', '築盛(築盛)', '形態(コンタクト～形態)'], hideFromStats: true },
     ],
   },
   [Department.COMPLETE_A]: {
