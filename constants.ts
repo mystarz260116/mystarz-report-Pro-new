@@ -15,9 +15,11 @@ export const JAPAN_HOLIDAYS_2026 = new Set([
   '2026-11-03', '2026-11-23','2026-12-28', '2026-12-29','2026-12-30', '2026-12-31',
 ]);
 
-// 🏢 会社の年始休暇
+// 🏢 会社の休暇日（年末年始その他）
 export const COMPANY_NEW_YEAR_HOLIDAYS = new Set([
   '2026-01-01', '2026-01-02', '2026-01-03', '2026-01-04',
+  '2026-08-14', '2026-08-15',
+  '2026-10-24',
 ]);
 
 export const isHoliday = (date: Date): boolean => {
@@ -96,7 +98,7 @@ export const DEPARTMENT_CONFIGS: Record<Department, DeptConfig> = {
     label: 'メタル③',
     color: '#ec4899',
     sections: [
-      { title: '製作品目', items: ['トリミング', 'ハードレジン', 'HJK', 'HB（インレー）', 'HB(アンレー)', 'HB(ジャケット)', 'HB(金属裏装)', 'ファイバーコア(自費)', 'ファイバーコア(保険)', 'CRインレー', 'CRアンレー', 'クラウン', 'インレー', 'ホワイトWAX'], hideFromStats: true },
+      { title: '製作品目', items: ['HR', 'HJC', 'CRインレー', 'FMC', 'インレー', 'HB金属裏装', 'HBジャケット', 'HBインレー', 'ファイバーコア', 'ホワイトWAX'], hideFromStats: true },
       { title: '工程', items: ['メタル(適合～オペーク)', '築盛(築盛)', '形態(コンタクト～形態)'] },
     ],
   },
