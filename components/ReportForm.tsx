@@ -168,19 +168,15 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
     
     // 大阪模型の合計自動計算
     if (selectedDept === Department.OSAKA_MODEL) {
-        const urgentItems = ['ノーマル模型(急ぎ)', '貼り付け模型(急ぎ)', 'インレー・コア模型(急ぎ)'];
         const totalItems = [
-          'ノーマル模型【メタル】(総製作)', 
-          'ノーマル模型【CAD】(総製作)', 
-          '貼り付け模型【メタル】(総製作)', 
-          '貼り付け模型【CAD】(総製作)', 
+          'ノーマル模型【メタル】(総製作)',
+          'ノーマル模型【CAD】(総製作)',
+          '貼り付け模型【メタル】(総製作)',
+          '貼り付け模型【CAD】(総製作)',
           'インレー・コア模型(総製作)'
         ];
-        
-        if (urgentItems.includes(itemName) || totalItems.includes(itemName)) {
-            const urgentSum = urgentItems.reduce((acc, key) => acc + (updatedCounts[key] || 0), 0);
-            updatedCounts['総数(急ぎ)'] = urgentSum;
-            
+
+        if (totalItems.includes(itemName)) {
             const totalSum = totalItems.reduce((acc, key) => acc + (updatedCounts[key] || 0), 0);
             updatedCounts['総数(総製作)'] = totalSum;
         }

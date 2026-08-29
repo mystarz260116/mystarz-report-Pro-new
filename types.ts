@@ -68,6 +68,7 @@ export interface DeptConfig {
     title: string;
     items: string[];
     innerSections?: { title: string; items: string[] }[];
+    hideFromStats?: boolean;
   }[];
   computedRows?: { afterItem: string; name: string; sumItems: string[] }[];
 }

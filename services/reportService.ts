@@ -195,7 +195,14 @@ export const loadReportsFromGoogleSheets = async (): Promise<void> => {
       const localOnlyReports = localReports.filter(r => !gasIds.has(r.id));
       const merged = [...Array.from(reportsMap.values()), ...localOnlyReports];
       const sorted = merged.sort((a, b) => b.date.localeCompare(a.date));
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(sorted));
+
+      // localStorage容量節約のため直近3ヶ月分のみ保持（全データはGoogle Sheetsに存在）
+      const cutoff = new Date();
+      cutoff.setMonth(cutoff.getMonth() - 3);
+      cutoff.setDate(1);
+      const cutoffStr = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}-01`;
+      const recent = sorted.filter(r => r.date >= cutoffStr);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(recent));
     }
   } catch (e) { console.error('データ読み込み失敗:', e); }
 };

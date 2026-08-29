@@ -153,10 +153,11 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
 
   // computedRows設定を持つ部署用に、表示行リストを構築するヘルパー
   const buildDisplayRows = (dept: typeof DEPARTMENTS_LIST[0], data: { items: Map<string, Map<number, number>>; dailyTotal: Map<number, number> }) => {
-    const configItems = DEPARTMENT_CONFIGS[dept.id].sections.flatMap(s => s.items);
+    const hiddenItems = DEPARTMENT_CONFIGS[dept.id].sections.filter(s => s.hideFromStats).flatMap(s => s.items);
+    const configItems = DEPARTMENT_CONFIGS[dept.id].sections.filter(s => !s.hideFromStats).flatMap(s => s.items);
     const dataItems: string[] = Array.from(data.items.keys());
     const sortedItemNames = configItems.filter(name => dataItems.includes(name));
-    const extraItems = dataItems.filter(name => !configItems.includes(name)).sort();
+    const extraItems = dataItems.filter(name => !configItems.includes(name) && !hiddenItems.includes(name)).sort();
     const baseNames: string[] = [...sortedItemNames, ...extraItems];
     const computedRowsConfig = DEPARTMENT_CONFIGS[dept.id].computedRows || [];
 
@@ -376,7 +377,7 @@ const Statistics: React.FC<StatisticsProps> = ({ reports }) => {
             <p className="font-bold mb-1">表示が反映されない場合</p>
             <p>スプレッドシートからデータを再読み込みするには、サイドバーの「最新データを取得」ボタンを押してください。</p>
             <div className="mt-1 space-y-1">
-                <p>※ 大阪模型の合計は「総数（急ぎ）」と「総数（総製作）」のみを足すように設定されています。</p>
+                <p>※ 大阪模型の合計は「総数（総製作）」のみを足すように設定されています。</p>
                 <p className="font-bold">※ 平均値の分母（稼働日数）は、当日のデータ入力が翌営業日のため、本日分を除いた「昨日まで」の累計で計算しています。</p>
             </div>
          </div>
