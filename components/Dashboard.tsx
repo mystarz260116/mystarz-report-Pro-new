@@ -12,31 +12,25 @@ const SPECIAL_ITEM_GROUPS = [
     color: '#8b5cf6',
     dept: Department.COMPLETE_A,
     items: [
-      { label: 'フルジルコニア ステイン・完成(Cr)',      keys: ['フルジルコニア ステイン・完成(Cr)'] },
-      { label: 'フルジルコニア ステイン・完成(インレー)', keys: ['フルジルコニア ステイン・完成(インレー)'] },
-      { label: 'ステイン・完成 Cr(e.max)',              keys: ['ステイン・完成 Cr(e.max)'] },
-      { label: 'ステイン・完成 インレー(e.max)',         keys: ['ステイン・完成 インレー(e.max)'] },
-      { label: 'ステイン・完成 ラミネート(e.max)',       keys: ['ステイン・完成 ラミネート(e.max)'] },
+      { label: 'フルジルコニア ステイン・完成(Cr)',      keys: ['フルジルコニア ステイン・完成(Cr)'],      depts: [Department.COMPLETE_A] },
+      { label: 'フルジルコニア ステイン・完成(インレー)', keys: ['フルジルコニア ステイン・完成(インレー)'], depts: [Department.COMPLETE_A] },
+      { label: 'ステイン・完成 Cr(e.max)',              keys: ['ステイン・完成 Cr(e.max)'],              depts: [Department.COMPLETE_A] },
+      { label: 'ステイン・完成 インレー(e.max)',         keys: ['ステイン・完成 インレー(e.max)'],         depts: [Department.COMPLETE_A] },
+      { label: 'ステイン・完成 ラミネート(e.max)',           keys: ['ステイン・完成 ラミネート(e.max)'],           depts: [Department.COMPLETE_A] },
+      { label: 'ジルコニア・レイヤリング(築盛)',            keys: ['レイヤリング(築盛)(Zir)'],                   depts: [Department.COMPLETE_A] },
+      { label: 'ジルコニア・レイヤリング(形成修正・完成)',   keys: ['レイヤリング(形成修正・完成)(Zir)'],          depts: [Department.COMPLETE_A] },
     ],
   },
   {
-    group: 'メタル③',
+    group: 'メタル',
     color: '#ec4899',
     dept: Department.METAL_3,
     items: [
-      { label: 'HB金属裏装',   keys: ['HB金属裏装', 'HB(金属裏装)'] },
-      { label: 'HBジャケット', keys: ['HBジャケット', 'HJK'] },
-      { label: 'HBインレー',   keys: ['HBインレー', 'HB（インレー）'] },
-      { label: 'HR',           keys: ['HR'] },
-      { label: 'ファイバーコア', keys: ['ファイバーコア', 'ファイバーコア(保険)', 'ファイバーコア(自費)'] },
-    ],
-  },
-  {
-    group: 'メタル①',
-    color: '#10b981',
-    dept: Department.METAL_1,
-    items: [
-      { label: 'HR', keys: ['HR'] },
+      { label: 'HB金属裏装',    keys: ['HB金属裏装', 'HB(金属裏装)'],                                    depts: [Department.METAL_3] },
+      { label: 'HBジャケット',  keys: ['HBジャケット', 'HJK'],                                           depts: [Department.METAL_3] },
+      { label: 'HBインレー',    keys: ['HBインレー', 'HB（インレー）'],                                   depts: [Department.METAL_3] },
+      { label: 'HR',            keys: ['HR'],                                                            depts: [Department.METAL_1, Department.METAL_3] },
+      { label: 'ファイバーコア', keys: ['ファイバーコア', 'ファイバーコア(保険)', 'ファイバーコア(自費)'],  depts: [Department.METAL_3] },
     ],
   },
 ];
@@ -140,9 +134,10 @@ const Dashboard: React.FC<DashboardProps> = ({ reports }) => {
     return SPECIAL_ITEM_GROUPS.map(group => ({
       ...group,
       items: group.items.map(item => {
+        const targetDepts = item.depts;
         const monthTotals = monthColumns.map(({ year, month }) => {
           const reports = finalReports.filter(r => {
-            if (!r.date || r.department !== group.dept) return false;
+            if (!r.date || !targetDepts.includes(r.department)) return false;
             const parts = standardizeDate(r.date).split('-');
             return Number(parts[0]) === year && Number(parts[1]) - 1 === month;
           });
