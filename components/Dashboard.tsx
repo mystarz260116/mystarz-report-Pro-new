@@ -22,6 +22,15 @@ const SPECIAL_ITEM_GROUPS = [
     ],
   },
   {
+    group: 'CAD/CAM',
+    color: '#0891b2',
+    dept: Department.CAD_CAM_3,
+    items: [
+      { label: '模型あり', keys: ['模型あり'], depts: [Department.CAD_CAM_3] },
+      { label: '模型なし', keys: ['模型なし'], depts: [Department.CAD_CAM_3] },
+    ],
+  },
+  {
     group: 'メタル',
     color: '#ec4899',
     dept: Department.METAL_3,
@@ -31,6 +40,9 @@ const SPECIAL_ITEM_GROUPS = [
       { label: 'HBインレー',    keys: ['HBインレー', 'HB（インレー）'],                                   depts: [Department.METAL_3] },
       { label: 'HR',            keys: ['HR'],                                                            depts: [Department.METAL_1, Department.METAL_3] },
       { label: 'ファイバーコア', keys: ['ファイバーコア', 'ファイバーコア(保険)', 'ファイバーコア(自費)'],  depts: [Department.METAL_3] },
+      { label: 'クラウン',      keys: ['クラウン'],                                                       depts: [Department.METAL_2] },
+      { label: 'インレー',      keys: ['インレー'],                                                       depts: [Department.METAL_2] },
+      { label: 'コア',          keys: ['コア'],                                                           depts: [Department.METAL_2] },
     ],
   },
 ];
