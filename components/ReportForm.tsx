@@ -435,16 +435,25 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
                               return (
                                 <div key={item} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0 px-2">
                                   <label className="text-sm text-gray-600">{displayLabel}</label>
-                                  <div className="flex items-center gap-1">
+                                  <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1">
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        placeholder="0"
+                                        value={itemCounts[item] === undefined ? '' : itemCounts[item]}
+                                        onChange={(e) => handleCountChange(item, e.target.value)}
+                                        className={`w-24 text-right border rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 ${itemCounts[item] > 0 ? 'border-blue-500 bg-blue-50 font-bold' : 'border-gray-300'}`}
+                                      />
+                                      <span className="text-xs font-bold text-slate-400 w-6">本</span>
+                                    </div>
                                     <input
                                       type="number"
-                                      min="0"
-                                      placeholder="0"
-                                      value={itemCounts[item] === undefined ? '' : itemCounts[item]}
-                                      onChange={(e) => handleCountChange(item, e.target.value)}
-                                      className={`w-24 text-right border rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 ${itemCounts[item] > 0 ? 'border-blue-500 bg-blue-50 font-bold' : 'border-gray-300'}`}
+                                      placeholder="分"
+                                      value={itemTimes[item] === undefined ? '' : itemTimes[item]}
+                                      onChange={(e) => setItemTimes(prev => ({...prev, [item]: parseInt(e.target.value) || 0}))}
+                                      className="w-16 text-right border rounded-md p-2 text-sm border-amber-200 bg-amber-50/20"
                                     />
-                                    <span className="text-xs font-bold text-slate-400 w-6">本</span>
                                   </div>
                                 </div>
                               );
@@ -558,15 +567,6 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
                                 <div key={item} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0 px-2">
                                     <label className="text-sm text-gray-600">{displayLabel}</label>
                                     <div className="flex items-center gap-2">
-                                        {(section.title === '3D/CAD' || selectedDept === Department.CAD_CAM || item === '3Dプリンター') && (
-                                            <input
-                                                type="number"
-                                                placeholder="分"
-                                                value={itemTimes[item] === undefined ? '' : itemTimes[item]}
-                                                onChange={(e) => setItemTimes(prev => ({...prev, [item]: parseInt(e.target.value) || 0}))}
-                                                className="w-16 text-right border rounded-md p-2 text-sm border-amber-200 bg-amber-50/20"
-                                            />
-                                        )}
                                         <div className="flex items-center gap-1">
                                           <input
                                               type="number"
@@ -584,6 +584,15 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
                                             <span className="text-xs font-bold text-slate-400 w-6">{getItemUnit(item)}</span>
                                           )}
                                         </div>
+                                        {!(selectedDept === Department.DENTURE && section.title === '基本') && (
+                                            <input
+                                                type="number"
+                                                placeholder="分"
+                                                value={itemTimes[item] === undefined ? '' : itemTimes[item]}
+                                                onChange={(e) => setItemTimes(prev => ({...prev, [item]: parseInt(e.target.value) || 0}))}
+                                                className="w-16 text-right border rounded-md p-2 text-sm border-amber-200 bg-amber-50/20"
+                                            />
+                                        )}
                                     </div>
                                 </div>
                                 );
